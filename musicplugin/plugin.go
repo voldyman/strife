@@ -368,6 +368,7 @@ func (p *MusicPlugin) Message(bot *bruxism.Bot, service bruxism.Service, message
 
 		i := 1
 		i2 := 0
+		msg = fmt.Sprintf("Total Songs: %d\n", len(vc.Queue))
 		for k, v := range vc.Queue {
 			np := ""
 			if vc.playing != nil && *vc.playing == v {
@@ -376,13 +377,13 @@ func (p *MusicPlugin) Message(bot *bruxism.Bot, service bruxism.Service, message
 			d := time.Duration(v.Duration) * time.Second
 			msg += fmt.Sprintf("`%.3d:%.15s` **%s** [%s] - *%s* %s\n", k, v.ID, v.Title, d.String(), v.AddedBy, np)
 
-			if i >= 15 {
+			if i >= 5 {
 				service.SendMessage(message.Channel(), msg)
 				msg = ""
 				i = 0
 				i2++
 
-				if i2 >= 8 {
+				if i2 >= 2 {
 					// limit response to 8 messages (120 songs)
 					return
 				}
