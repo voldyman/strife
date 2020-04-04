@@ -303,6 +303,11 @@ func (p *MusicPlugin) Message(bot *bruxism.Bot, service bruxism.Service, message
 	case "stop":
 		// stop the queue player
 
+		if !vcok {
+			service.SendMessage(message.Channel(), fmt.Sprintf("Can't stop if i am not doing anything. :taps_head:"))
+			return
+		}
+
 		if vc.close != nil {
 			close(vc.close)
 			vc.close = nil
