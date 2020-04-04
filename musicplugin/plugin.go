@@ -618,7 +618,7 @@ func (p *MusicPlugin) play(vc *voiceConnection, close <-chan struct{}, control <
 	}
 	ytdlbuf := bufio.NewReaderSize(ytdlout, 16384)
 
-	ffmpeg := exec.Command("ffmpeg", "-i", "pipe:0", "-f", "s16le", "-ar", "48000", "-ac", "2", "-af", "volume=0.025", "pipe:1")
+	ffmpeg := exec.Command("ffmpeg", "-i", "pipe:0", "-f", "s16le", "-ar", "48000", "-ac", "2", "-af", "volume=0.2", "pipe:1")
 	ffmpeg.Stdin = ytdlbuf
 	if vc.debug {
 		ffmpeg.Stderr = os.Stderr
