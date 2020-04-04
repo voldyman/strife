@@ -24,9 +24,9 @@ const commandName = "tunes"
 type MusicPlugin struct {
 	sync.Mutex
 
-	discord *bruxism.Discord
-
+	discord          *bruxism.Discord
 	VoiceConnections map[string]*voiceConnection
+	adminRoles       map[string][]string // guild id -> role names
 }
 
 type voiceConnection struct {
@@ -69,11 +69,12 @@ func (s song) String() string {
 }
 
 // New will create a new music plugin.
-func New(discord *bruxism.Discord) bruxism.Plugin {
+func New(discord *bruxism.Discord, adminRoles map[string][]string) bruxism.Plugin {
 
 	p := &MusicPlugin{
 		discord:          discord,
 		VoiceConnections: make(map[string]*voiceConnection),
+		adminRoles:       adminRoles,
 	}
 
 	return p
@@ -222,7 +223,7 @@ func (p *MusicPlugin) Message(bot *bruxism.Bot, service bruxism.Service, message
 		// TODO: maybe provide plugin stats, total channels, total song queues, etc
 
 	case "join":
-		if !service.IsBotOwner(message) {
+		if !service.IsBotOwner(message) && !p.isUserAdmin(channel.GuildID, message.UserID()) {
 			service.SendMessage(message.Channel(), "Sorry, only bot owner can join, please ask him to run this command.")
 			return
 		}
@@ -259,7 +260,7 @@ func (p *MusicPlugin) Message(bot *bruxism.Bot, service bruxism.Service, message
 
 	case "leave":
 		// leave voice channel for this Guild
-		if !service.IsBotOwner(message) {
+		if !service.IsBotOwner(message) && !p.isUserAdmin(channel.GuildID, message.UserID()) {
 			service.SendMessage(message.Channel(), "Sorry, only bot owner can leave, please ask him to run this command.")
 			return
 		}
@@ -365,6 +366,10 @@ func (p *MusicPlugin) Message(bot *bruxism.Bot, service bruxism.Service, message
 
 	case "list":
 		// list top items in the queue
+
+		if vc == nil {
+			return
+		}
 
 		if len(vc.Queue) == 0 {
 			service.SendMessage(message.Channel(), "The tunes queue is empty.")
@@ -758,4 +763,62 @@ func (p *MusicPlugin) play(vc *voiceConnection, close <-chan struct{}, control <
 // Stats will return the stats for a plugin.
 func (p *MusicPlugin) Stats(bot *bruxism.Bot, service bruxism.Service, message bruxism.Message) []string {
 	return nil
+}
+
+func (p *MusicPlugin) isUserAdmin(guildID, userID string) bool {
+	fmt.Println("Checking", guildID, userID)
+	roles, ok := p.adminRoles[guildID]
+	if !ok {
+		return false
+	}
+
+	guildRoles := fetchGuildRoles(p.discord.Session, guildID)
+	allowedRoles := filterRoles(guildRoles, roles, guildID)
+
+	guildMember, err := p.discord.Session.GuildMember(guildID, userID)
+	if err != nil {
+		log.Println("unable to get guild member for user:", userID, guildID, err)
+		return false
+	}
+
+	for _, userRoleID := range guildMember.Roles {
+		if _, ok := allowedRoles[userRoleID]; ok {
+			fmt.Println("was allowed")
+			return true
+		}
+	}
+	return false
+}
+
+func fetchGuildRoles(session *discordgo.Session, guildID string) map[string]*discordgo.Role {
+	guildMap := map[string]*discordgo.Role{}
+
+	guildRoles, err := session.GuildRoles(guildID)
+	if err != nil {
+		log.Println("unable to get guild roles for guild:", guildID, err)
+		return guildMap
+	}
+
+	for _, role := range guildRoles {
+		guildMap[role.Name] = role
+	}
+
+	return guildMap
+}
+
+func filterRoles(guildRoles map[string]*discordgo.Role, adminRoles []string, guildID string) map[string]*discordgo.Role {
+	allowedRoles := map[string]*discordgo.Role{}
+
+	if len(adminRoles) == 0 {
+		log.Println("no admin roles configured")
+		return allowedRoles
+	}
+
+	for _, allowedRoleName := range adminRoles {
+		if r, ok := guildRoles[allowedRoleName]; ok {
+			allowedRoles[r.ID] = r
+		}
+	}
+
+	return allowedRoles
 }

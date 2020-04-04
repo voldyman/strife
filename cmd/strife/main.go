@@ -31,6 +31,9 @@ var discordOwnerUserID string
 var imgurID string
 var imgurAlbum string
 var mashableKey string
+var adminMapping = map[string][]string{
+	"449378915203678230": []string{"Bot man", "I hear voices", "Music"}, // "bot man", "i hear voices" and "music"
+}
 
 func init() {
 	flag.StringVar(&discordToken, "discordtoken", "", "Discord token.")
@@ -91,7 +94,7 @@ func main() {
 	bot.RegisterPlugin(discord, chartplugin.New())
 	bot.RegisterPlugin(discord, discordavatarplugin.New())
 	bot.RegisterPlugin(discord, emojiplugin.New())
-	bot.RegisterPlugin(discord, musicplugin.New(discord))
+	bot.RegisterPlugin(discord, musicplugin.New(discord, adminMapping))
 	bot.RegisterPlugin(discord, mysonplugin.New())
 	bot.RegisterPlugin(discord, playedplugin.New())
 	bot.RegisterPlugin(discord, playingplugin.New())
