@@ -62,6 +62,10 @@ type song struct {
 	Remaining   int
 }
 
+func (s song) String() string {
+	return fmt.Sprintf("Title: %s, ID: %s, AddedBy: %s", s.Title, s.ID, s.AddedBy)
+}
+
 // New will create a new music plugin.
 func New(discord *bruxism.Discord) bruxism.Plugin {
 
@@ -172,6 +176,10 @@ func (p *MusicPlugin) Message(bot *bruxism.Bot, service bruxism.Service, message
 	defer bruxism.MessageRecover()
 
 	if service.IsMe(message) {
+		return
+	}
+
+	if message.Type() == bruxism.MessageTypeUpdate {
 		return
 	}
 
@@ -482,8 +490,8 @@ func (p *MusicPlugin) enqueue(vc *voiceConnection, url string, service bruxism.S
 		service.SendMessage(message.Channel(), fmt.Sprintf("Error adding song to playlist."))
 		return
 	}
-	defer func() {
-		go cmd.Wait()
+	go func() {
+		cmd.Wait()
 	}()
 
 	scanner := bufio.NewScanner(output)
@@ -633,8 +641,8 @@ func (p *MusicPlugin) play(vc *voiceConnection, close <-chan struct{}, control <
 		log.Println("musicplugin: ytdl Start err:", err)
 		return
 	}
-	defer func() {
-		go ytdl.Wait()
+	go func() {
+		ytdl.Wait()
 	}()
 
 	err = ffmpeg.Start()
@@ -642,8 +650,8 @@ func (p *MusicPlugin) play(vc *voiceConnection, close <-chan struct{}, control <
 		log.Println("musicplugin: ffmpeg Start err:", err)
 		return
 	}
-	defer func() {
-		go ffmpeg.Wait()
+	go func() {
+		ffmpeg.Wait()
 	}()
 
 	err = dca.Start()
@@ -651,8 +659,8 @@ func (p *MusicPlugin) play(vc *voiceConnection, close <-chan struct{}, control <
 		log.Println("musicplugin: dca Start err:", err)
 		return
 	}
-	defer func() {
-		go dca.Wait()
+	go func() {
+		dca.Wait()
 	}()
 
 	// header "buffer"
