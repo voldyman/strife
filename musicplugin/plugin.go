@@ -19,6 +19,8 @@ import (
 	"github.com/iopred/bruxism"
 )
 
+const commandName = "tunes"
+
 type MusicPlugin struct {
 	sync.Mutex
 
@@ -79,18 +81,18 @@ func New(discord *bruxism.Discord) bruxism.Plugin {
 
 // Name returns the name of the plugin.
 func (p *MusicPlugin) Name() string {
-	return "Music"
+	return "Tunes"
 }
 
 // Load will load plugin state from a byte array.
 func (p *MusicPlugin) Load(bot *bruxism.Bot, service bruxism.Service, data []byte) (err error) {
 	if service.Name() != bruxism.DiscordServiceName {
-		panic("Music Plugin only supports Discord.")
+		panic("Tunes Plugin only supports Discord.")
 	}
 
 	if data != nil {
 		if err = json.Unmarshal(data, p); err != nil {
-			log.Println("musicplugin: loading data err:", err)
+			log.Println("tunesplugin: loading data err:", err)
 		}
 	}
 
@@ -118,7 +120,7 @@ func (p *MusicPlugin) ready() {
 		}
 		vc, err := p.join(v.ChannelID)
 		if err != nil {
-			log.Println("musicplugin: join channel err:", err)
+			log.Println("tunesplugin: join channel err:", err)
 			continue
 		}
 		p.gostart(vc)
@@ -139,7 +141,7 @@ func (p *MusicPlugin) Help(bot *bruxism.Bot, service bruxism.Service, message br
 	// Only show help messages for guilds where we have a voice connection
 	c, err := p.discord.Channel(message.Channel())
 	if err != nil {
-		log.Println("musicplugin: fetching channel err:", err.Error())
+		log.Println("tunesplugin: fetching channel err:", err.Error())
 		return nil
 	}
 
@@ -149,22 +151,22 @@ func (p *MusicPlugin) Help(bot *bruxism.Bot, service bruxism.Service, message br
 	}
 
 	help := []string{
-		bruxism.CommandHelp(service, "music", "<command>", "Music Plugin, see `help music`")[0],
+		bruxism.CommandHelp(service, commandName, "<command>", "Music Plugin, see `help music`")[0],
 	}
 
 	if detailed {
 		help = append(help, []string{
 			"Examples:",
-			bruxism.CommandHelp(service, "music", "join [channelid]", "Join your voice channel or the provided voice channel.")[0],
-			bruxism.CommandHelp(service, "music", "leave", "Leave current voice channel.")[0],
-			bruxism.CommandHelp(service, "music", "play [url]", "Start playing music and optionally enqueue provided url.")[0],
-			bruxism.CommandHelp(service, "music", "info", "Information about this plugin and the currently playing song.")[0],
-			bruxism.CommandHelp(service, "music", "pause", "Pause playback of current song.")[0],
-			bruxism.CommandHelp(service, "music", "resume", "Resume playback of current song.")[0],
-			bruxism.CommandHelp(service, "music", "skip", "Skip current song.")[0],
-			bruxism.CommandHelp(service, "music", "stop", "Stop playing music.")[0],
-			bruxism.CommandHelp(service, "music", "list", "List contents of queue.")[0],
-			bruxism.CommandHelp(service, "music", "clear", "Clear all items from queue.")[0],
+			bruxism.CommandHelp(service, commandName, "join [channelid]", "Join your voice channel or the provided voice channel.")[0],
+			bruxism.CommandHelp(service, commandName, "leave", "Leave current voice channel.")[0],
+			bruxism.CommandHelp(service, commandName, "play [url]", "Start playing music and optionally enqueue provided url.")[0],
+			bruxism.CommandHelp(service, commandName, "info", "Information about this plugin and the currently playing song.")[0],
+			bruxism.CommandHelp(service, commandName, "pause", "Pause playback of current song.")[0],
+			bruxism.CommandHelp(service, commandName, "resume", "Resume playback of current song.")[0],
+			bruxism.CommandHelp(service, commandName, "skip", "Skip current song.")[0],
+			bruxism.CommandHelp(service, commandName, "stop", "Stop playing music.")[0],
+			bruxism.CommandHelp(service, commandName, "list", "List contents of queue.")[0],
+			bruxism.CommandHelp(service, commandName, "clear", "Clear all items from queue.")[0],
 		}...)
 	}
 
@@ -183,7 +185,7 @@ func (p *MusicPlugin) Message(bot *bruxism.Bot, service bruxism.Service, message
 		return
 	}
 
-	if !bruxism.MatchesCommand(service, "music", message) && !bruxism.MatchesCommand(service, "mu", message) {
+	if !bruxism.MatchesCommand(service, commandName, message) && !bruxism.MatchesCommand(service, "tu", message) {
 		return
 	}
 
@@ -203,7 +205,7 @@ func (p *MusicPlugin) Message(bot *bruxism.Bot, service bruxism.Service, message
 	// a few locations below
 	channel, err := p.discord.Channel(message.Channel())
 	if err != nil {
-		log.Println("musicplugin: fetching channel err:", err.Error())
+		log.Println("tunesplugin: fetching channel err:", err.Error())
 		return
 	}
 
@@ -253,7 +255,7 @@ func (p *MusicPlugin) Message(bot *bruxism.Bot, service bruxism.Service, message
 			break
 		}
 
-		service.SendMessage(message.Channel(), "Now, let's play some music!")
+		service.SendMessage(message.Channel(), "Now, let's play some tunes!")
 
 	case "leave":
 		// leave voice channel for this Guild
@@ -343,7 +345,7 @@ func (p *MusicPlugin) Message(bot *bruxism.Bot, service bruxism.Service, message
 	case "info":
 		// report player settings, queue info, and current song
 
-		msg := fmt.Sprintf("`Bruxism MusicPlugin:`\n")
+		msg := fmt.Sprintf("`Voldy's awesome TunesPlugin:`\n")
 		msg += fmt.Sprintf("`Voice Channel:` %s\n", vc.ChannelID)
 		msg += fmt.Sprintf("`Queue Size:` %d\n", len(vc.Queue))
 
@@ -365,7 +367,7 @@ func (p *MusicPlugin) Message(bot *bruxism.Bot, service bruxism.Service, message
 		// list top items in the queue
 
 		if len(vc.Queue) == 0 {
-			service.SendMessage(message.Channel(), "The music queue is empty.")
+			service.SendMessage(message.Channel(), "The tunes queue is empty.")
 			return
 		}
 
@@ -405,7 +407,7 @@ func (p *MusicPlugin) Message(bot *bruxism.Bot, service bruxism.Service, message
 		vc.Unlock()
 
 	default:
-		service.SendMessage(message.Channel(), "Unknown music command, try `help music`")
+		service.SendMessage(message.Channel(), "Unknown tunes command, try `help tunes`")
 	}
 }
 
@@ -551,7 +553,7 @@ func (p *MusicPlugin) gostart(vc *voiceConnection) (err error) {
 func (p *MusicPlugin) start(vc *voiceConnection, close <-chan struct{}, control <-chan controlMessage) {
 
 	if close == nil || control == nil || vc == nil {
-		log.Println("musicplugin: start() exited due to nil channels")
+		log.Println("tunesplugin: start() exited due to nil channels")
 		return
 	}
 
@@ -564,7 +566,7 @@ func (p *MusicPlugin) start(vc *voiceConnection, close <-chan struct{}, control 
 		// exit if close channel is closed
 		select {
 		case <-close:
-			log.Println("musicplugin: start() exited due to close channel.")
+			log.Println("tunesplugin: start() exited due to close channel.")
 			return
 		default:
 		}
@@ -603,7 +605,7 @@ func (p *MusicPlugin) play(vc *voiceConnection, close <-chan struct{}, control <
 	var err error
 
 	if close == nil || control == nil || vc == nil || vc.conn == nil {
-		log.Println("musicplugin: play exited because [close|control|vc|vc.conn] is nil.")
+		log.Println("tunesplugin: play exited because [close|control|vc|vc.conn] is nil.")
 		return
 	}
 
@@ -613,7 +615,7 @@ func (p *MusicPlugin) play(vc *voiceConnection, close <-chan struct{}, control <
 	}
 	ytdlout, err := ytdl.StdoutPipe()
 	if err != nil {
-		log.Println("musicplugin: ytdl StdoutPipe err:", err)
+		log.Println("tunesplugin: ytdl StdoutPipe err:", err)
 		return
 	}
 	ytdlbuf := bufio.NewReaderSize(ytdlout, 16384)
@@ -625,7 +627,7 @@ func (p *MusicPlugin) play(vc *voiceConnection, close <-chan struct{}, control <
 	}
 	ffmpegout, err := ffmpeg.StdoutPipe()
 	if err != nil {
-		log.Println("musicplugin: ffmpeg StdoutPipe err:", err)
+		log.Println("tunesplugin: ffmpeg StdoutPipe err:", err)
 		return
 	}
 	ffmpegbuf := bufio.NewReaderSize(ffmpegout, 16384)
@@ -637,14 +639,14 @@ func (p *MusicPlugin) play(vc *voiceConnection, close <-chan struct{}, control <
 	}
 	dcaout, err := dca.StdoutPipe()
 	if err != nil {
-		log.Println("musicplugin: dca StdoutPipe err:", err)
+		log.Println("tunesplugin: dca StdoutPipe err:", err)
 		return
 	}
 	dcabuf := bufio.NewReaderSize(dcaout, 16384)
 
 	err = ytdl.Start()
 	if err != nil {
-		log.Println("musicplugin: ytdl Start err:", err)
+		log.Println("tunesplugin: ytdl Start err:", err)
 		return
 	}
 	go func() {
@@ -653,7 +655,7 @@ func (p *MusicPlugin) play(vc *voiceConnection, close <-chan struct{}, control <
 
 	err = ffmpeg.Start()
 	if err != nil {
-		log.Println("musicplugin: ffmpeg Start err:", err)
+		log.Println("tunesplugin: ffmpeg Start err:", err)
 		return
 	}
 	go func() {
@@ -662,7 +664,7 @@ func (p *MusicPlugin) play(vc *voiceConnection, close <-chan struct{}, control <
 
 	err = dca.Start()
 	if err != nil {
-		log.Println("musicplugin: dca Start err:", err)
+		log.Println("tunesplugin: dca Start err:", err)
 		return
 	}
 	go func() {
@@ -683,7 +685,7 @@ func (p *MusicPlugin) play(vc *voiceConnection, close <-chan struct{}, control <
 
 		select {
 		case <-close:
-			log.Println("musicplugin: play() exited due to close channel.")
+			log.Println("tunesplugin: play() exited due to close channel.")
 			return
 		default:
 		}
@@ -726,7 +728,7 @@ func (p *MusicPlugin) play(vc *voiceConnection, close <-chan struct{}, control <
 			return
 		}
 		if err != nil {
-			log.Println("musicplugin: read opus length from dca err:", err)
+			log.Println("tunesplugin: read opus length from dca err:", err)
 			return
 		}
 
@@ -737,7 +739,7 @@ func (p *MusicPlugin) play(vc *voiceConnection, close <-chan struct{}, control <
 			return
 		}
 		if err != nil {
-			log.Println("musicplugin: read opus from dca err:", err)
+			log.Println("tunesplugin: read opus from dca err:", err)
 			return
 		}
 
