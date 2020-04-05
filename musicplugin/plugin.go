@@ -160,7 +160,8 @@ func (p *MusicPlugin) Help(bot *bruxism.Bot, service bruxism.Service, message br
 			"Examples:",
 			bruxism.CommandHelp(service, commandName, "join [channelid]", "Join your voice channel or the provided voice channel.")[0],
 			bruxism.CommandHelp(service, commandName, "leave", "Leave current voice channel.")[0],
-			bruxism.CommandHelp(service, commandName, "play [url]", "Start playing music and optionally enqueue provided url.")[0],
+			bruxism.CommandHelp(service, commandName, "play [song name]", "Start playing music and optionally enqueue a song by name.")[0],
+			bruxism.CommandHelp(service, commandName, "add [URL]", "Start playing music and optionally enqueue a song by URL.")[0],
 			bruxism.CommandHelp(service, commandName, "info", "Information about this plugin and the currently playing song.")[0],
 			bruxism.CommandHelp(service, commandName, "pause", "Pause playback of current song.")[0],
 			bruxism.CommandHelp(service, commandName, "resume", "Resume playback of current song.")[0],
@@ -286,7 +287,7 @@ func (p *MusicPlugin) Message(bot *bruxism.Bot, service bruxism.Service, message
 		service.SendMessage(message.Channel(), fmt.Sprintf("debug mode set to %v", vc.debug))
 		vc.Unlock()
 
-	case "play":
+	case "add":
 		// Start queue player and optionally enqueue provided songs
 
 		p.gostart(vc)
@@ -301,6 +302,19 @@ func (p *MusicPlugin) Message(bot *bruxism.Bot, service bruxism.Service, message
 				// TODO: Might need improving.
 				service.SendMessage(message.Channel(), err.Error())
 			}
+		}
+
+	case "play":
+		p.gostart(vc)
+
+		songName := strings.Join(parts[1:], " ")
+
+		if len(songName) == 0 {
+			service.SendMessage(message.Channel(), "Please give me the name of the song. `play <song name>`")
+		}
+		err = p.enqueue(vc, "ytsearch:"+songName, service, message)
+		if err != nil {
+			service.SendMessage(message.Channel(), err.Error())
 		}
 
 	case "stop":
@@ -509,6 +523,8 @@ func (p *MusicPlugin) enqueue(vc *voiceConnection, url string, service bruxism.S
 
 	scanner := bufio.NewScanner(output)
 
+	totalAdded := 0
+	var firstSong *song
 	for scanner.Scan() {
 		s := song{}
 		err = json.Unmarshal(scanner.Bytes(), &s)
@@ -519,10 +535,21 @@ func (p *MusicPlugin) enqueue(vc *voiceConnection, url string, service bruxism.S
 
 		s.AddedBy = message.UserName()
 
+		if totalAdded == 0 {
+			firstSong = &s
+		}
 		vc.Lock()
 		vc.Queue = append(vc.Queue, s)
 		vc.Unlock()
+		totalAdded++
 	}
+
+	updatedQueueMessage := fmt.Sprintf("Added song: %s", firstSong.Title)
+	if totalAdded > 1 {
+		updatedQueueMessage += fmt.Sprintf(". and %d other.", totalAdded)
+	}
+
+	service.SendMessage(message.Channel(), updatedQueueMessage)
 	return
 }
 
@@ -625,7 +652,7 @@ func (p *MusicPlugin) play(vc *voiceConnection, close <-chan struct{}, control <
 	}
 	ytdlbuf := bufio.NewReaderSize(ytdlout, 16384)
 
-	ffmpeg := exec.Command("ffmpeg", "-i", "pipe:0", "-f", "s16le", "-ar", "48000", "-ac", "2", "-af", "volume=0.2", "pipe:1")
+	ffmpeg := exec.Command("ffmpeg", "-i", "pipe:0", "-f", "s16le", "-ar", "48000", "-ac", "2", "-af", "volume=0.5", "pipe:1")
 	ffmpeg.Stdin = ytdlbuf
 	if vc.debug {
 		ffmpeg.Stderr = os.Stderr
@@ -766,7 +793,6 @@ func (p *MusicPlugin) Stats(bot *bruxism.Bot, service bruxism.Service, message b
 }
 
 func (p *MusicPlugin) isUserAdmin(guildID, userID string) bool {
-	fmt.Println("Checking", guildID, userID)
 	roles, ok := p.adminRoles[guildID]
 	if !ok {
 		return false
@@ -783,7 +809,6 @@ func (p *MusicPlugin) isUserAdmin(guildID, userID string) bool {
 
 	for _, userRoleID := range guildMember.Roles {
 		if _, ok := allowedRoles[userRoleID]; ok {
-			fmt.Println("was allowed")
 			return true
 		}
 	}
