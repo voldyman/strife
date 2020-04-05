@@ -82,7 +82,7 @@ func New(discord *bruxism.Discord, adminRoles map[string][]string) bruxism.Plugi
 
 // Name returns the name of the plugin.
 func (p *MusicPlugin) Name() string {
-	return "Tunes"
+	return commandName
 }
 
 // Load will load plugin state from a byte array.
@@ -152,7 +152,7 @@ func (p *MusicPlugin) Help(bot *bruxism.Bot, service bruxism.Service, message br
 	}
 
 	help := []string{
-		bruxism.CommandHelp(service, commandName, "<command>", "Music Plugin, see `help music`")[0],
+		bruxism.CommandHelp(service, commandName, "<command>", "Tunes Plugin, see `help tunes`")[0],
 	}
 
 	if detailed {
