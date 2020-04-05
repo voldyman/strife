@@ -135,22 +135,6 @@ func (p *MusicPlugin) Save() ([]byte, error) {
 
 // Help returns a list of help strings that are printed when the user requests them.
 func (p *MusicPlugin) Help(bot *bruxism.Bot, service bruxism.Service, message bruxism.Message, detailed bool) []string {
-	if service.IsPrivate(message) {
-		return nil
-	}
-
-	// Only show help messages for guilds where we have a voice connection
-	c, err := p.discord.Channel(message.Channel())
-	if err != nil {
-		log.Println("tunesplugin: fetching channel err:", err.Error())
-		return nil
-	}
-
-	_, ok := p.VoiceConnections[c.GuildID]
-	if !ok {
-		return nil
-	}
-
 	help := []string{
 		bruxism.CommandHelp(service, commandName, "<command>", "Tunes Plugin, see `help tunes`")[0],
 	}
