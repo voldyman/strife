@@ -2,7 +2,6 @@ package welcomeplugin
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"strings"
 
@@ -58,7 +57,7 @@ func (w *WelcomePlugin) sendNewMemberMessage(s *discordgo.Session, evt *discordg
 	}
 
 	onlineMems := 0
-	verifiedMems := 0
+	realMems := 0
 
 	realRoleID := ""
 	allRoles, err := w.discord.Session.GuildRoles(g.ID)
@@ -74,7 +73,7 @@ func (w *WelcomePlugin) sendNewMemberMessage(s *discordgo.Session, evt *discordg
 
 	for _, m := range g.Members {
 		if containsRole(realRoleID, m.Roles) {
-			verifiedMems++
+			realMems++
 		}
 
 		p, _ := s.State.Presence(g.ID, m.User.ID)
@@ -83,8 +82,13 @@ func (w *WelcomePlugin) sendNewMemberMessage(s *discordgo.Session, evt *discordg
 		}
 	}
 
-	msg := fmt.Sprintf("Hello! Welcome to %s!\nWe are a group of %d people out of which %d are online right now.\n", g.Name, g.MemberCount, onlineMems)
-	msg += fmt.Sprintf("There are %d verified real members on this server, who meet regularly (when possible)", verifiedMems)
+	msg := renderMessage(messageVars{
+		ServerName:       g.Name,
+		User:             evt.User.Mention(),
+		TotalUsersCount:  g.MemberCount,
+		OnlineUsersCount: onlineMems,
+		RealUsersCount:   realMems,
+	})
 
 	ch, err := s.UserChannelCreate(evt.User.ID)
 	if err != nil {
