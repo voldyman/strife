@@ -21,6 +21,7 @@ import (
 	"github.com/iopred/bruxism/statsplugin"
 	"github.com/iopred/bruxism/triviaplugin"
 	"github.com/voldyman/strife/musicplugin"
+	"github.com/voldyman/strife/welcomeplugin"
 )
 
 var discordToken string
@@ -100,6 +101,7 @@ func main() {
 	bot.RegisterPlugin(discord, playingplugin.New())
 	bot.RegisterPlugin(discord, reminderplugin.New())
 	bot.RegisterPlugin(discord, triviaplugin.New())
+	bot.RegisterPlugin(discord, welcomeplugin.New(discord, discordOwnerUserID))
 
 	bot.Open()
 
