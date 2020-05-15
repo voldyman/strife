@@ -7,8 +7,10 @@ import (
 const expectedOutput = `
 Welcome to voldy's plugin, @sj!
 
-We are a group of 420 people out of which 69 are online right now.
-There are 9001 verified real members on this server, who meet regularly (when possible).
+We are a group of **420** people out of which **69** are online right now.
+There are **9001** verified real members on this server, who meet regularly (when possible).
+
+Users posted **20** messages today and **420** in the last week.
 
 Please check #rules and post an introduction in #introductions to see all the other channels and start chatting in the server. 
 
@@ -21,7 +23,6 @@ Reminder of the introductions template:
 Name/Nickname: 
 Age: 
 Hobbies: 
-Looking for:
 `
 
 func TestMessageRendering(t *testing.T) {
@@ -31,6 +32,8 @@ func TestMessageRendering(t *testing.T) {
 		TotalUsersCount:  420,
 		OnlineUsersCount: 69,
 		RealUsersCount:   9001, // gotta be over 9000
+		MessagesToday:    20,
+		MessagesLastWeek: 420,
 	})
 
 	if out != expectedOutput {

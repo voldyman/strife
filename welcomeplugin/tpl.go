@@ -8,8 +8,10 @@ import (
 const templateText = `
 Welcome to {{.ServerName}}, {{.User}}!
 
-We are a group of {{.TotalUsersCount}} people out of which {{.OnlineUsersCount}} are online right now.
-There are {{.RealUsersCount}} verified real members on this server, who meet regularly (when possible).
+We are a group of **{{.TotalUsersCount}}** people out of which **{{.OnlineUsersCount}}** are online right now.
+There are **{{.RealUsersCount}}** verified real members on this server, who meet regularly (when possible).
+
+Users posted **{{.MessagesToday}}** messages today and **{{.MessagesLastWeek}}** in the last week.
 
 Please check #rules and post an introduction in #introductions to see all the other channels and start chatting in the server. 
 
@@ -22,7 +24,6 @@ Reminder of the introductions template:
 Name/Nickname: 
 Age: 
 Hobbies: 
-Looking for:
 `
 
 var messageTemplate = template.Must(template.New("message").Parse(templateText))
@@ -33,6 +34,8 @@ type messageVars struct {
 	TotalUsersCount  int
 	OnlineUsersCount int
 	RealUsersCount   int
+	MessagesToday    int
+	MessagesLastWeek int
 }
 
 func renderMessage(vars messageVars) string {

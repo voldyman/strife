@@ -4,20 +4,23 @@ import (
 	"encoding/json"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/iopred/bruxism"
 )
 
 type WelcomePlugin struct {
-	discord     *bruxism.Discord
-	ownerUserID string
+	discord      *bruxism.Discord
+	ownerUserID  string
+	MessageStats *stats
 }
 
 func New(d *bruxism.Discord, ownerUserID string) bruxism.Plugin {
 	return &WelcomePlugin{
-		discord:     d,
-		ownerUserID: ownerUserID,
+		discord:      d,
+		ownerUserID:  ownerUserID,
+		MessageStats: newStats(10 * durationDay),
 	}
 }
 
@@ -88,6 +91,8 @@ func (w *WelcomePlugin) sendNewMemberMessage(s *discordgo.Session, evt *discordg
 		TotalUsersCount:  g.MemberCount,
 		OnlineUsersCount: onlineMems,
 		RealUsersCount:   realMems,
+		MessagesToday:    w.MessageStats.today(),
+		MessagesLastWeek: w.MessageStats.week(),
 	})
 
 	ch, err := s.UserChannelCreate(evt.User.ID)
@@ -115,6 +120,10 @@ func (w *WelcomePlugin) Help(bot *bruxism.Bot, service bruxism.Service, message 
 }
 
 func (w *WelcomePlugin) Message(bot *bruxism.Bot, service bruxism.Service, message bruxism.Message) {
+	if message.Type() == bruxism.MessageTypeCreate {
+		w.MessageStats.increment(time.Now())
+	}
+
 	if strings.HasPrefix(message.Message(), "!print") && message.UserID() == w.ownerUserID {
 		ch, err := w.discord.Session.Channel(message.Channel())
 		if err != nil {
