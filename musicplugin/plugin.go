@@ -208,10 +208,6 @@ func (p *MusicPlugin) Message(bot *bruxism.Bot, service bruxism.Service, message
 		// TODO: maybe provide plugin stats, total channels, total song queues, etc
 
 	case "join":
-		if !service.IsBotOwner(message) && !p.isUserAdmin(channel.GuildID, message.UserID()) {
-			service.SendMessage(message.Channel(), "Sorry, only bot owner can join, please ask him to run this command.")
-			return
-		}
 		// join the voice channel of the caller or the provided channel ID
 
 		channelID := ""
@@ -244,12 +240,6 @@ func (p *MusicPlugin) Message(bot *bruxism.Bot, service bruxism.Service, message
 		service.SendMessage(message.Channel(), "Now, let's play some tunes!")
 
 	case "leave":
-		// leave voice channel for this Guild
-		if !service.IsBotOwner(message) && !p.isUserAdmin(channel.GuildID, message.UserID()) {
-			service.SendMessage(message.Channel(), "Sorry, only bot owner can leave, please ask him to run this command.")
-			return
-		}
-
 		if !vcok {
 			service.SendMessage(message.Channel(), "There is no voice connection for this Guild.")
 		}
