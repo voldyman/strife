@@ -1,65 +1,118 @@
 package welcomeplugin
 
 import (
+	"container/ring"
+	"fmt"
 	"time"
 )
 
 const durationDay = 24 * time.Hour
 
-type stats struct {
-	MaxRentention time.Duration
-	MaxBuckets    int
-	Buckets       []int
-	LastTime      time.Time
+type bucket struct {
+	End   time.Time
+	Count int
 }
 
-func newStats(maxRentention time.Duration) *stats {
-	maxBuckets := (maxRentention / durationDay) + 1
+func newBucket(forDay time.Time) *bucket {
+	ends := forDay.Add(time.Duration(24-forDay.Hour()) * time.Hour)
+	return &bucket{
+		End:   ends,
+		Count: 0,
+	}
+}
 
+func (b *bucket) Add(t time.Time, c int) bool {
+	if t.After(b.End) {
+		return false
+	}
+
+	b.Count += c
+	return true
+}
+
+type stats struct {
+	Buckets *ring.Ring
+}
+
+func newStats(days int) *stats {
 	return &stats{
-		MaxRentention: maxRentention,
-		MaxBuckets:    int(maxBuckets),
-		Buckets:       make([]int, maxBuckets),
-		LastTime:      time.Now(),
+		Buckets: ring.New(days),
 	}
 }
 
 func (s *stats) increment(t time.Time) {
-	if len(s.Buckets) > s.MaxBuckets {
-		s.Buckets = s.Buckets[0:s.MaxBuckets]
+	if s.Buckets.Value == nil {
+		s.Buckets.Value = newBucket(t)
 	}
-	day := time.Now().Sub(t) / durationDay
-	if day < 0 || day >= s.MaxRentention || int(day) >= len(s.Buckets) {
-		return
+	for !s.curBucket().Add(t, 1) {
+		s.moveBucketForward()
+	}
+}
+
+func (s *stats) curBucket() *bucket {
+	if s.Buckets == nil || s.Buckets.Value == nil { // first time
+		b := newBucket(time.Now())
+		s.Buckets.Value = b
+		return b
 	}
 
-	bucket := s.LastTime.Sub(t) / durationDay
-	s.LastTime = t
-	if bucket > 0 {
-		s.Buckets = append([]int{0}, s.Buckets...)
-	}
-	s.Buckets[day] = s.Buckets[day] + 1
+	return s.Buckets.Value.(*bucket)
+}
+
+func (s *stats) moveBucketForward() *bucket {
+	curRing := s.curBucket()
+	newBucket := newBucket(curRing.End.Add(1 * time.Hour))
+
+	nextRing := s.Buckets.Next()
+	nextRing.Value = newBucket
+	s.Buckets = nextRing
+	return newBucket
 }
 
 func (s *stats) today() int {
-	if len(s.Buckets) == 0 {
-		return 0
-	}
-	return s.Buckets[0]
+	return s.curBucket().Count
 }
 
 func (s *stats) yesterday() int {
-	if len(s.Buckets) < 2 {
+	if s.Buckets == nil || s.Buckets.Prev() == nil {
 		return 0
 	}
-	return s.Buckets[1]
+	b := s.Buckets.Prev().Value.(*bucket)
+	return b.Count
 }
 
 func (s *stats) week() int {
-	count := 0
-	for i := 0; i < len(s.Buckets) && i < 7; i++ {
-		count = s.Buckets[i] + count
+	if s.Buckets == nil {
+		return 0
 	}
+	weekDate := time.Now().Add(-7 * 24 * time.Hour)
+	count := 0
+	s.Buckets.Do(func(v interface{}) {
+		if v == nil {
+			return
+		}
+		b, ok := v.(*bucket)
+		if !ok {
+			return
+		}
+
+		if b.End.After(weekDate) {
+			count += b.Count
+		}
+	})
 
 	return count
+}
+
+func (s *stats) printBuckets() {
+	bucketCount := 0
+	s.Buckets.Do(func(v interface{}) {
+		defer func() { bucketCount++ }()
+		if v == nil {
+			fmt.Println(bucketCount, "<nil>")
+			return
+		}
+		b := v.(*bucket)
+		fmt.Println(bucketCount, b.Count, b.End)
+	})
 }

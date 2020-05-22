@@ -20,7 +20,7 @@ func New(d *bruxism.Discord, ownerUserID string) bruxism.Plugin {
 	return &WelcomePlugin{
 		discord:      d,
 		ownerUserID:  ownerUserID,
-		MessageStats: newStats(10 * durationDay),
+		MessageStats: newStats(10),
 	}
 }
 
