@@ -2,6 +2,7 @@ package welcomeplugin
 
 import (
 	"container/ring"
+	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -127,4 +128,49 @@ func (s *stats) printBuckets() {
 		b := v.(*bucket)
 		fmt.Println(bucketCount, b.Count, b.End)
 	})
+}
+
+type bucketSpec struct {
+	Count int
+	End   time.Time
+}
+
+type statsSpec struct {
+	Days    int
+	Buckets []bucketSpec
+}
+
+func (s stats) MarshalJSON() ([]byte, error) {
+	statsSpec := statsSpec{
+		Days:    s.Days,
+		Buckets: []bucketSpec{},
+	}
+
+	s.buckets.Do(func(v interface{}) {
+		if v == nil {
+			return
+		}
+		b := v.(*bucket)
+		statsSpec.Buckets = append(statsSpec.Buckets, bucketSpec{
+			Count: b.Count,
+			End:   b.End,
+		})
+	})
+	return json.Marshal(statsSpec)
+}
+func (s *stats) UnmarshalJSON(b []byte) error {
+	var spec statsSpec
+	if err := json.Unmarshal(b, &spec); err != nil {
+		return err
+	}
+	s.Days = spec.Days
+	s.buckets = ring.New(s.Days)
+	for _, bs := range spec.Buckets {
+		s.buckets = s.buckets.Next()
+		s.buckets.Value = &bucket{
+			Count: bs.Count,
+			End:   bs.End,
+		}
+	}
+	return nil
 }
