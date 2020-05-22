@@ -13,14 +13,14 @@ import (
 type WelcomePlugin struct {
 	discord      *bruxism.Discord
 	ownerUserID  string
-	MessageStats *stats
+	MessageStats map[string]*stats
 }
 
 func New(d *bruxism.Discord, ownerUserID string) bruxism.Plugin {
 	return &WelcomePlugin{
 		discord:      d,
 		ownerUserID:  ownerUserID,
-		MessageStats: newStats(10),
+		MessageStats: map[string]*stats{},
 	}
 }
 
@@ -85,14 +85,15 @@ func (w *WelcomePlugin) sendNewMemberMessage(s *discordgo.Session, evt *discordg
 		}
 	}
 
+	gstats := w.guildStats(evt.GuildID)
 	msg := renderMessage(messageVars{
 		ServerName:       g.Name,
 		User:             evt.User.Mention(),
 		TotalUsersCount:  g.MemberCount,
 		OnlineUsersCount: onlineMems,
 		RealUsersCount:   realMems,
-		MessagesToday:    w.MessageStats.today(),
-		MessagesLastWeek: w.MessageStats.week(),
+		MessagesToday:    gstats.today(),
+		MessagesLastWeek: gstats.week(),
 	})
 
 	ch, err := s.UserChannelCreate(evt.User.ID)
@@ -121,24 +122,43 @@ func (w *WelcomePlugin) Help(bot *bruxism.Bot, service bruxism.Service, message 
 
 func (w *WelcomePlugin) Message(bot *bruxism.Bot, service bruxism.Service, message bruxism.Message) {
 	if message.Type() == bruxism.MessageTypeCreate {
-		w.MessageStats.increment(time.Now())
+		w.guildStats(w.guildID(message)).increment(time.Now())
+	}
+
+	if strings.HasPrefix(message.Message(), "!debug") && message.UserID() == w.ownerUserID {
+		w.guildStats(w.guildID(message)).printBuckets()
 	}
 
 	if strings.HasPrefix(message.Message(), "!print") && message.UserID() == w.ownerUserID {
-		ch, err := w.discord.Session.Channel(message.Channel())
-		if err != nil {
-			log.Println("unable to get channel from channel id")
-			return
-		}
+		guildID := w.guildID(message)
 
-		guildMember, err := w.discord.Session.GuildMember(ch.GuildID, message.UserID())
-		guildMember.GuildID = ch.GuildID
+		guildMember, err := w.discord.Session.GuildMember(guildID, message.UserID())
+		guildMember.GuildID = guildID
 		if err != nil {
 			log.Println("unable to get guild member from channel id")
 			return
 		}
 		w.sendNewMemberMessage(w.discord.Session, guildMember)
 	}
+}
+
+func (w *WelcomePlugin) guildID(msg bruxism.Message) string {
+	ch, err := w.discord.Session.Channel(msg.Channel())
+	if err != nil {
+		log.Println("unable to get guildID", err)
+		return ""
+	}
+	return ch.GuildID
+}
+
+func (w *WelcomePlugin) guildStats(guildID string) *stats {
+	if s, ok := w.MessageStats[guildID]; ok {
+		return s
+	}
+
+	s := newStats(10)
+	w.MessageStats[guildID] = s
+	return s
 }
 
 func (w *WelcomePlugin) Save() ([]byte, error) {

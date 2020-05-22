@@ -31,18 +31,23 @@ func (b *bucket) Add(t time.Time, c int) bool {
 }
 
 type stats struct {
-	Buckets *ring.Ring
+	buckets *ring.Ring
+	Days    int
 }
 
 func newStats(days int) *stats {
 	return &stats{
-		Buckets: ring.New(days),
+		Days:    days,
+		buckets: ring.New(days),
 	}
 }
 
 func (s *stats) increment(t time.Time) {
-	if s.Buckets.Value == nil {
-		s.Buckets.Value = newBucket(t)
+	if s.buckets == nil {
+		s.buckets = ring.New(s.Days)
+	}
+	if s.buckets.Value == nil {
+		s.buckets.Value = newBucket(t)
 	}
 	for !s.curBucket().Add(t, 1) {
 		s.moveBucketForward()
@@ -50,44 +55,47 @@ func (s *stats) increment(t time.Time) {
 }
 
 func (s *stats) curBucket() *bucket {
-	if s.Buckets == nil || s.Buckets.Value == nil { // first time
+	if s.buckets == nil || s.buckets.Value == nil { // first time
 		b := newBucket(time.Now())
-		s.Buckets.Value = b
+		s.buckets.Value = b
 		return b
 	}
 
-	return s.Buckets.Value.(*bucket)
+	return s.buckets.Value.(*bucket)
 }
 
 func (s *stats) moveBucketForward() *bucket {
 	curRing := s.curBucket()
 	newBucket := newBucket(curRing.End.Add(1 * time.Hour))
 
-	nextRing := s.Buckets.Next()
+	nextRing := s.buckets.Next()
 	nextRing.Value = newBucket
-	s.Buckets = nextRing
+	s.buckets = nextRing
 	return newBucket
 }
 
 func (s *stats) today() int {
+	if s.buckets == nil {
+		return 0
+	}
 	return s.curBucket().Count
 }
 
 func (s *stats) yesterday() int {
-	if s.Buckets == nil || s.Buckets.Prev() == nil {
+	if s.buckets == nil || s.buckets.Prev() == nil {
 		return 0
 	}
-	b := s.Buckets.Prev().Value.(*bucket)
+	b := s.buckets.Prev().Value.(*bucket)
 	return b.Count
 }
 
 func (s *stats) week() int {
-	if s.Buckets == nil {
+	if s.buckets == nil {
 		return 0
 	}
 	weekDate := time.Now().Add(-7 * 24 * time.Hour)
 	count := 0
-	s.Buckets.Do(func(v interface{}) {
+	s.buckets.Do(func(v interface{}) {
 		if v == nil {
 			return
 		}
@@ -105,8 +113,12 @@ func (s *stats) week() int {
 }
 
 func (s *stats) printBuckets() {
+	if s.buckets == nil {
+		fmt.Println("nil buckets")
+		return
+	}
 	bucketCount := 0
-	s.Buckets.Do(func(v interface{}) {
+	s.buckets.Do(func(v interface{}) {
 		defer func() { bucketCount++ }()
 		if v == nil {
 			fmt.Println(bucketCount, "<nil>")
