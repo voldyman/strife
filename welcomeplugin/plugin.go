@@ -80,7 +80,7 @@ func (w *WelcomePlugin) sendNewMemberMessage(s *discordgo.Session, evt *discordg
 		}
 
 		p, _ := s.State.Presence(g.ID, m.User.ID)
-		if p != nil && (p.Status == discordgo.StatusIdle || p.Status == discordgo.StatusOnline) {
+		if p != nil && p.Status != discordgo.StatusOffline {
 			onlineMems++
 		}
 	}
