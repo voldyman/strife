@@ -22,6 +22,26 @@ import (
 const commandName = "tunes"
 const defaultCmdPrefix = "."
 
+var commandSet = buildSet("help", "stats", "join", "leave", "debug", "add", "play", "stop", "skip", "pause", "resume", "info", "list", "clear", "prefix")
+
+type set map[string]struct{}
+
+func buildSet(vals ...string) set {
+	s := set{}
+	for _, v := range vals {
+		if _, ok := s[v]; ok {
+			panic(fmt.Sprintf("term %s already in set", v))
+		}
+		s[v] = struct{}{}
+	}
+	return s
+}
+
+func (s set) contains(str string) bool {
+	_, ok := s[str]
+	return ok
+}
+
 type MusicPlugin struct {
 	sync.Mutex
 
@@ -163,11 +183,21 @@ func (p *MusicPlugin) Help(bot *bruxism.Bot, service bruxism.Service, message br
 	return help
 }
 
+func hasValidCmd(message, cmdPrefix string) bool {
+	prefixLessMsg := strings.TrimPrefix(message, cmdPrefix)
+	parts := strings.SplitAfterN(prefixLessMsg, " ", 2)
+	if len(parts) == 0 {
+		return false
+	}
+
+	return commandSet.contains(parts[0])
+}
+
 func (p *MusicPlugin) matchesCommand(s bruxism.Service, commandName string, message bruxism.Message) bool {
 	loweredMessage := strings.ToLower(strings.TrimSpace(message.Message()))
 	expectedCmdPrefix := strings.ToLower(s.CommandPrefix() + commandName)
 
-	return strings.HasPrefix(loweredMessage, expectedCmdPrefix) || strings.HasPrefix(loweredMessage, p.CmdPrefix)
+	return strings.HasPrefix(loweredMessage, expectedCmdPrefix) || hasValidCmd(loweredMessage, p.CmdPrefix)
 }
 
 func (p *MusicPlugin) parseCommand(s bruxism.Service, commandName string, message bruxism.Message) []string {
