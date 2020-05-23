@@ -2,6 +2,7 @@ package welcomeplugin
 
 import (
 	"bytes"
+	"strings"
 	"text/template"
 )
 
@@ -21,12 +22,18 @@ If you have any questions, feel free to message an Admin or Mod.
 Please allow up to 24 hours for us to give out permissions, we usually allow within minutes. Thank you :blush:
 
 Reminder of the introductions template: 
+<CODE>
 Name/Nickname: 
 Age: 
-Hobbies: 
+Hobbies:
+<CODE>
 `
 
-var messageTemplate = template.Must(template.New("message").Parse(templateText))
+var messageTemplate = template.Must(template.New("message").Parse(formattedTemplateText()))
+
+func formattedTemplateText() string {
+	return strings.ReplaceAll(templateText, "<CODE>", "```")
+}
 
 type messageVars struct {
 	ServerName       string
