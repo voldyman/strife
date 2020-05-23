@@ -190,7 +190,7 @@ func hasValidCmd(message, cmdPrefix string) bool {
 		return false
 	}
 
-	return commandSet.contains(parts[0])
+	return commandSet.contains(strings.TrimSpace(parts[0]))
 }
 
 func (p *MusicPlugin) matchesCommand(s bruxism.Service, commandName string, message bruxism.Message) bool {
@@ -204,8 +204,8 @@ func (p *MusicPlugin) parseCommand(s bruxism.Service, commandName string, messag
 	loweredMessage := strings.ToLower(strings.TrimSpace(message.Message()))
 
 	if strings.HasPrefix(loweredMessage, p.CmdPrefix) {
-		result := strings.TrimPrefix(loweredMessage, p.CmdPrefix)
-		return strings.Split(result, " ")
+		result := loweredMessage[len(p.CmdPrefix):]
+		return strings.Fields(result)
 	}
 
 	loweredPrefix := strings.ToLower(s.CommandPrefix())
@@ -243,7 +243,6 @@ func (p *MusicPlugin) Message(bot *bruxism.Bot, service bruxism.Service, message
 	}
 
 	parts := p.parseCommand(service, commandName, message)
-
 	if len(parts) == 0 {
 		service.SendMessage(message.Channel(), strings.Join(p.Help(bot, service, message, true), "\n"))
 		return
