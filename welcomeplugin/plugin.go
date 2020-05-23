@@ -10,6 +10,8 @@ import (
 	"github.com/iopred/bruxism"
 )
 
+const welcomeChannelName = "introductions"
+
 type WelcomePlugin struct {
 	discord      *bruxism.Discord
 	ownerUserID  string
@@ -85,15 +87,25 @@ func (w *WelcomePlugin) sendNewMemberMessage(s *discordgo.Session, evt *discordg
 		}
 	}
 
+	intoChannel := "#introductions"
+
+	for _, c := range g.Channels {
+		if c.Name == welcomeChannelName {
+			intoChannel = c.Mention()
+			break
+		}
+	}
 	gstats := w.guildStats(evt.GuildID)
+
 	msg := renderMessage(messageVars{
-		ServerName:       g.Name,
-		User:             evt.User.Mention(),
-		TotalUsersCount:  g.MemberCount,
-		OnlineUsersCount: onlineMems,
-		RealUsersCount:   realMems,
-		MessagesToday:    gstats.today(),
-		MessagesLastWeek: gstats.week(),
+		ServerName:          g.Name,
+		User:                evt.User.Mention(),
+		TotalUsersCount:     g.MemberCount,
+		OnlineUsersCount:    onlineMems,
+		RealUsersCount:      realMems,
+		MessagesToday:       gstats.today(),
+		MessagesLastWeek:    gstats.week(),
+		IntroductionChannel: intoChannel,
 	})
 
 	ch, err := s.UserChannelCreate(evt.User.ID)

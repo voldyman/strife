@@ -14,14 +14,15 @@ There are **{{.RealUsersCount}}** verified real members on this server, who meet
 
 Users posted **{{.MessagesToday}}** messages today and **{{.MessagesLastWeek}}** in the last week.
 
-Please check #rules and post an introduction in #introductions to see all the other channels and start chatting in the server. 
+Please check #rules and post an introduction in {{.IntroductionChannel}} to see all the other channels and start chatting in the server. 
 
 After verification, you can head over to #roles and grab roles for notifications of events or meetups, etc.
 
 If you have any questions, feel free to message an Admin or Mod.
 Please allow up to 24 hours for us to give out permissions, we usually allow within minutes. Thank you :blush:
 
-Reminder of the introductions template: 
+Reminder of the introduction template:
+
 <CODE>
 Name/Nickname: 
 Age: 
@@ -36,13 +37,14 @@ func formattedTemplateText() string {
 }
 
 type messageVars struct {
-	ServerName       string
-	User             string
-	TotalUsersCount  int
-	OnlineUsersCount int
-	RealUsersCount   int
-	MessagesToday    int
-	MessagesLastWeek int
+	ServerName          string
+	User                string
+	IntroductionChannel string
+	TotalUsersCount     int
+	OnlineUsersCount    int
+	RealUsersCount      int
+	MessagesToday       int
+	MessagesLastWeek    int
 }
 
 func renderMessage(vars messageVars) string {
