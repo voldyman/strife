@@ -20,11 +20,13 @@ import (
 )
 
 const commandName = "tunes"
+const defaultCmdPrefix = "."
 
 type MusicPlugin struct {
 	sync.Mutex
 
 	discord          *bruxism.Discord
+	CmdPrefix        string
 	VoiceConnections map[string]*voiceConnection
 	adminRoles       map[string][]string // guild id -> role names
 }
@@ -75,6 +77,7 @@ func New(discord *bruxism.Discord, adminRoles map[string][]string) bruxism.Plugi
 		discord:          discord,
 		VoiceConnections: make(map[string]*voiceConnection),
 		adminRoles:       adminRoles,
+		CmdPrefix:        defaultCmdPrefix,
 	}
 
 	return p
@@ -153,10 +156,39 @@ func (p *MusicPlugin) Help(bot *bruxism.Bot, service bruxism.Service, message br
 			bruxism.CommandHelp(service, commandName, "stop", "Stop playing music.")[0],
 			bruxism.CommandHelp(service, commandName, "list", "List contents of queue.")[0],
 			bruxism.CommandHelp(service, commandName, "clear", "Clear all items from queue.")[0],
+			bruxism.CommandHelp(service, commandName, "prefix <cmdPrefix>", "Set the shortcut command prefix.")[0],
 		}...)
 	}
 
 	return help
+}
+
+func (p *MusicPlugin) matchesCommand(s bruxism.Service, commandName string, message bruxism.Message) bool {
+	loweredMessage := strings.ToLower(strings.TrimSpace(message.Message()))
+	expectedCmdPrefix := strings.ToLower(s.CommandPrefix() + commandName)
+
+	return strings.HasPrefix(loweredMessage, expectedCmdPrefix) || strings.HasPrefix(loweredMessage, p.CmdPrefix)
+}
+
+func (p *MusicPlugin) parseCommand(s bruxism.Service, commandName string, message bruxism.Message) []string {
+	loweredMessage := strings.ToLower(strings.TrimSpace(message.Message()))
+
+	if strings.HasPrefix(loweredMessage, p.CmdPrefix) {
+		result := strings.TrimPrefix(loweredMessage, p.CmdPrefix)
+		return strings.Split(result, " ")
+	}
+
+	loweredPrefix := strings.ToLower(s.CommandPrefix())
+
+	if strings.HasPrefix(loweredMessage, loweredPrefix) {
+		loweredMessage = strings.TrimPrefix(loweredMessage, loweredPrefix)
+	}
+
+	rest := strings.Fields(loweredMessage)
+	if len(rest) > 1 {
+		return rest[1:]
+	}
+	return []string{}
 }
 
 // Message handler.
@@ -171,16 +203,16 @@ func (p *MusicPlugin) Message(bot *bruxism.Bot, service bruxism.Service, message
 		return
 	}
 
-	if !bruxism.MatchesCommand(service, commandName, message) && !bruxism.MatchesCommand(service, "tu", message) {
-		return
-	}
-
 	if service.IsPrivate(message) {
 		service.SendMessage(message.Channel(), "Sorry, this command doesn't work in private chat.")
 		return
 	}
 
-	_, parts := bruxism.ParseCommand(service, message)
+	if !p.matchesCommand(service, commandName, message) {
+		return
+	}
+
+	parts := p.parseCommand(service, commandName, message)
 
 	if len(parts) == 0 {
 		service.SendMessage(message.Channel(), strings.Join(p.Help(bot, service, message, true), "\n"))
@@ -398,6 +430,13 @@ func (p *MusicPlugin) Message(bot *bruxism.Bot, service bruxism.Service, message
 		vc.Lock()
 		vc.Queue = []song{}
 		vc.Unlock()
+
+	case "prefix":
+		if len(parts) < 2 {
+			service.SendMessage(message.Channel(), fmt.Sprintf("Current command prefix is '%s', please specify a new one if you want to change it", p.CmdPrefix))
+			return
+		}
+		p.CmdPrefix = parts[1]
 
 	default:
 		service.SendMessage(message.Channel(), "Unknown tunes command, try `help tunes`")
