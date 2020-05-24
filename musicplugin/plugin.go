@@ -184,6 +184,9 @@ func (p *MusicPlugin) Help(bot *bruxism.Bot, service bruxism.Service, message br
 }
 
 func hasValidCmd(message, cmdPrefix string) bool {
+	if !strings.HasPrefix(message, cmdPrefix) {
+		return false
+	}
 	prefixLessMsg := strings.TrimPrefix(message, cmdPrefix)
 	parts := strings.SplitAfterN(prefixLessMsg, " ", 2)
 	if len(parts) == 0 {
@@ -210,9 +213,7 @@ func (p *MusicPlugin) parseCommand(s bruxism.Service, commandName string, messag
 
 	loweredPrefix := strings.ToLower(s.CommandPrefix())
 
-	if strings.HasPrefix(loweredMessage, loweredPrefix) {
-		loweredMessage = strings.TrimPrefix(loweredMessage, loweredPrefix)
-	}
+	loweredMessage = strings.TrimPrefix(loweredMessage, loweredPrefix)
 
 	rest := strings.Fields(loweredMessage)
 	if len(rest) > 1 {
@@ -395,7 +396,7 @@ func (p *MusicPlugin) Message(bot *bruxism.Bot, service bruxism.Service, message
 	case "info":
 		// report player settings, queue info, and current song
 
-		msg := fmt.Sprintf("`Voldy's awesome TunesPlugin:`\n")
+		msg := "`Voldy's awesome TunesPlugin:`\n"
 		msg += fmt.Sprintf("`Voice Channel:` %s\n", vc.ChannelID)
 		msg += fmt.Sprintf("`Queue Size:` %d\n", len(vc.Queue))
 
@@ -404,7 +405,7 @@ func (p *MusicPlugin) Message(bot *bruxism.Bot, service bruxism.Service, message
 			break
 		}
 
-		msg += fmt.Sprintf("`Now Playing:`\n")
+		msg += "`Now Playing:`\n"
 		msg += fmt.Sprintf("`ID:` %s\n", vc.playing.ID)
 		msg += fmt.Sprintf("`Title:` %s\n", vc.playing.Title)
 		msg += fmt.Sprintf("`Duration:` %ds\n", vc.playing.Duration)
@@ -646,7 +647,7 @@ func (p *MusicPlugin) start(vc *voiceConnection, close <-chan struct{}, control 
 		}
 
 		// loop until voice connection is ready and songs are in the queue.
-		if vc.conn == nil || vc.conn.Ready == false || len(vc.Queue) < 1 {
+		if vc.conn == nil || !vc.conn.Ready || len(vc.Queue) < 1 {
 			time.Sleep(1 * time.Second)
 			continue
 		}
@@ -769,7 +770,6 @@ func (p *MusicPlugin) play(vc *voiceConnection, close <-chan struct{}, control <
 			switch ctl {
 			case Skip:
 				return
-				break
 			case Pause:
 				done := false
 				for {
@@ -781,7 +781,6 @@ func (p *MusicPlugin) play(vc *voiceConnection, close <-chan struct{}, control <
 					switch ctl {
 					case Skip:
 						return
-						break
 					case Resume:
 						done = true
 						break

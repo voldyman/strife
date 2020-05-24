@@ -3,6 +3,18 @@ module github.com/voldyman/strife
 go 1.14
 
 require (
-	github.com/bwmarrin/discordgo v0.20.2
-	github.com/iopred/bruxism v0.0.0-20200308202412-cc56085f1f9b
+	cloud.google.com/go v0.57.0 // indirect
+	github.com/bwmarrin/discordgo v0.20.3
+	github.com/fluffle/goirc v1.0.3 // indirect
+	github.com/golang/protobuf v1.4.2 // indirect
+	github.com/google/go-cmp v0.4.0
+	github.com/gorilla/websocket v1.4.2 // indirect
+	github.com/iopred/bruxism v0.0.0-20200522210842-d871fc5a415d
+	github.com/pkg/errors v0.9.1 // indirect
+	golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37 // indirect
+	golang.org/x/net v0.0.0-20200520182314-0ba52f642ac2 // indirect
+	golang.org/x/sys v0.0.0-20200523222454-059865788121 // indirect
+	gonum.org/v1/netlib v0.0.0-20200317120129-c5a04cffd98a // indirect
+	google.golang.org/api v0.25.0 // indirect
+	google.golang.org/genproto v0.0.0-20200521103424-e9a78aa275b7 // indirect
 )

@@ -1,10 +1,13 @@
 package welcomeplugin
 
 import (
+	"strings"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
-const expectedOutput = `
+var expectedOutput = strings.ReplaceAll(`
 Welcome to voldy's plugin, @sj!
 
 We are a group of **420** people out of which **69** are online right now.
@@ -19,24 +22,28 @@ After verification, you can head over to #roles and grab roles for notifications
 If you have any questions, feel free to message an Admin or Mod.
 Please allow up to 24 hours for us to give out permissions, we usually allow within minutes. Thank you :blush:
 
-Reminder of the introductions template: 
+Reminder of the introduction template:
+
+<CODE>
 Name/Nickname: 
 Age: 
-Hobbies: 
-`
+Hobbies:
+<CODE>
+`, "<CODE>", "```")
 
 func TestMessageRendering(t *testing.T) {
 	out := renderMessage(messageVars{
-		ServerName:       "voldy's plugin",
-		User:             "@sj",
-		TotalUsersCount:  420,
-		OnlineUsersCount: 69,
-		RealUsersCount:   9001, // gotta be over 9000
-		MessagesToday:    20,
-		MessagesLastWeek: 420,
+		ServerName:          "voldy's plugin",
+		User:                "@sj",
+		TotalUsersCount:     420,
+		OnlineUsersCount:    69,
+		RealUsersCount:      9001, // gotta be over 9000
+		MessagesToday:       20,
+		MessagesLastWeek:    420,
+		IntroductionChannel: "#introductions",
 	})
 
-	if out != expectedOutput {
-		t.Error("real output did not match expected output")
+	if diff := cmp.Diff(expectedOutput, out); diff != "" {
+		t.Errorf("real output did not match expected output: %s\n", diff)
 	}
 }
