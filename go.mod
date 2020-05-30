@@ -9,6 +9,7 @@ require (
 	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/google/go-cmp v0.4.0
 	github.com/gorilla/websocket v1.4.2 // indirect
+	github.com/hako/durafmt v0.0.0-20191009132224-3f39dc1ed9f4
 	github.com/iopred/bruxism v0.0.0-20200522210842-d871fc5a415d
 	github.com/pkg/errors v0.9.1 // indirect
 	golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37 // indirect

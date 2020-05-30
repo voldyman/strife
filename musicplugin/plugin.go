@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/hako/durafmt"
 	"github.com/iopred/bruxism"
 )
 
@@ -84,6 +85,12 @@ type song struct {
 	URL         string `json:"webpage_url"`
 	Duration    int    `json:"duration"`
 	Remaining   int
+}
+
+func (s song) DurationString() string {
+	d := time.Duration(s.Duration) * time.Second
+	f := durafmt.Parse(d)
+	return f.String()
 }
 
 func (s song) String() string {
@@ -396,8 +403,13 @@ func (p *MusicPlugin) Message(bot *bruxism.Bot, service bruxism.Service, message
 	case "info":
 		// report player settings, queue info, and current song
 
-		msg := "`Voldy's awesome TunesPlugin:`\n"
-		msg += fmt.Sprintf("`Voice Channel:` %s\n", vc.ChannelID)
+		msg := "`voldy's awesome TunesPlugin:`\n"
+		ch, err := p.discord.Channel(vc.ChannelID)
+
+		if err == nil {
+			msg += fmt.Sprintf("`Voice Channel:` %s\n", ch.Mention())
+		}
+
 		msg += fmt.Sprintf("`Queue Size:` %d\n", len(vc.Queue))
 
 		if vc.playing == nil {
@@ -408,7 +420,7 @@ func (p *MusicPlugin) Message(bot *bruxism.Bot, service bruxism.Service, message
 		msg += "`Now Playing:`\n"
 		msg += fmt.Sprintf("`ID:` %s\n", vc.playing.ID)
 		msg += fmt.Sprintf("`Title:` %s\n", vc.playing.Title)
-		msg += fmt.Sprintf("`Duration:` %ds\n", vc.playing.Duration)
+		msg += fmt.Sprintf("`Duration:` %s\n", vc.playing.DurationString())
 		msg += fmt.Sprintf("`Remaining:` %ds\n", vc.playing.Remaining)
 		msg += fmt.Sprintf("`Source URL:` <%s>\n", vc.playing.URL)
 		msg += fmt.Sprintf("`Thumbnail:` %s\n", vc.playing.Thumbnail)
@@ -436,8 +448,8 @@ func (p *MusicPlugin) Message(bot *bruxism.Bot, service bruxism.Service, message
 			if vc.playing != nil && *vc.playing == v {
 				np = "**(Now Playing)**"
 			}
-			d := time.Duration(v.Duration) * time.Second
-			msg += fmt.Sprintf("`%.3d:%.15s` **%s** [%s] - *%s* %s\n", k, v.ID, v.Title, d.String(), v.AddedBy, np)
+			d := v.DurationString()
+			msg += fmt.Sprintf("`%.3d:%.15s` **%s** [%s] - *%s* %s\n", k, v.ID, v.Title, d, v.AddedBy, np)
 
 			if i >= 5 {
 				service.SendMessage(message.Channel(), msg)
