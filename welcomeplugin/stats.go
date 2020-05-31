@@ -4,6 +4,7 @@ import (
 	"container/ring"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -128,6 +129,25 @@ func (s *stats) printBuckets() {
 		b := v.(*bucket)
 		fmt.Println(bucketCount, b.Count, b.End)
 	})
+}
+
+func (s *stats) String() string {
+	if s.buckets == nil {
+		return "nil buckets"
+	}
+	var out strings.Builder
+	bucketCount := 0
+	s.buckets.Do(func(v interface{}) {
+		defer func() { bucketCount++ }()
+		if v == nil {
+			out.WriteString(fmt.Sprintf("%d: %s\n", bucketCount, "<nil>"))
+
+		}
+		b := v.(*bucket)
+		out.WriteString(fmt.Sprintf("%d: %d %s\n", bucketCount, b.Count, b.End.String()))
+	})
+
+	return out.String()
 }
 
 type bucketSpec struct {

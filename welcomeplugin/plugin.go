@@ -2,6 +2,7 @@ package welcomeplugin
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"strings"
 	"time"
@@ -129,6 +130,8 @@ func containsRole(roleID string, roles []string) bool {
 func (w *WelcomePlugin) Help(bot *bruxism.Bot, service bruxism.Service, message bruxism.Message, detailed bool) []string {
 	return []string{
 		"welcomes people to the chat",
+		bruxism.CommandHelp(service, "welcome-me", "", "To receive the welcome message as a dm.")[0],
+		bruxism.CommandHelp(service, "msgcount", "", "To ask the bot to send the current message stats.")[0],
 	}
 }
 
@@ -141,7 +144,12 @@ func (w *WelcomePlugin) Message(bot *bruxism.Bot, service bruxism.Service, messa
 		w.guildStats(w.guildID(message)).printBuckets()
 	}
 
-	if strings.HasPrefix(message.Message(), "!print") && message.UserID() == w.ownerUserID {
+	if bruxism.MatchesCommand(service, "msgcount", message) {
+		response := fmt.Sprintf("```%s```", w.guildStats(w.guildID(message)).String())
+		service.SendMessage(message.Channel(), response)
+	}
+
+	if bruxism.MatchesCommand(service, "welcome-me", message) {
 		guildID := w.guildID(message)
 
 		guildMember, err := w.discord.Session.GuildMember(guildID, message.UserID())
