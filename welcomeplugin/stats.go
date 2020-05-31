@@ -140,11 +140,11 @@ func (s *stats) String() string {
 	s.buckets.Do(func(v interface{}) {
 		defer func() { bucketCount++ }()
 		if v == nil {
-			out.WriteString(fmt.Sprintf("%d: %s\n", bucketCount, "<nil>"))
+			out.WriteString(fmt.Sprintf("%d: %s   -\n", bucketCount, "<nil>"))
 
 		}
 		b := v.(*bucket)
-		out.WriteString(fmt.Sprintf("%d: %d %s\n", bucketCount, b.Count, b.End.Format(time.RFC822)))
+		out.WriteString(fmt.Sprintf("%d: %5d %s\n", bucketCount, b.Count, b.End.Format(time.RFC822)))
 	})
 
 	return out.String()
