@@ -144,7 +144,7 @@ func (s *stats) String() string {
 
 		}
 		b := v.(*bucket)
-		out.WriteString(fmt.Sprintf("%d: %d %s\n", bucketCount, b.Count, b.End.String()))
+		out.WriteString(fmt.Sprintf("%d: %d %s\n", bucketCount, b.Count, b.End.Format(time.RFC822)))
 	})
 
 	return out.String()
