@@ -115,20 +115,7 @@ func (s *stats) week() int {
 }
 
 func (s *stats) printBuckets() {
-	if s.buckets == nil {
-		fmt.Println("nil buckets")
-		return
-	}
-	bucketCount := 0
-	s.buckets.Do(func(v interface{}) {
-		defer func() { bucketCount++ }()
-		if v == nil {
-			fmt.Println(bucketCount, "<nil>")
-			return
-		}
-		b := v.(*bucket)
-		fmt.Println(bucketCount, b.Count, b.End)
-	})
+	fmt.Println(s.String())
 }
 
 func (s *stats) String() string {
