@@ -4,6 +4,7 @@ import (
 	"container/ring"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 )
@@ -183,6 +184,9 @@ func (s *stats) UnmarshalJSON(b []byte) error {
 	}
 	s.Days = spec.Days
 	s.buckets = ring.New(s.Days)
+
+	sort.Slice(spec.Buckets, func(i, j int) bool { return spec.Buckets[i].End.Before(spec.Buckets[j].End) })
+
 	for _, bs := range spec.Buckets {
 		s.buckets = s.buckets.Next()
 		s.buckets.Value = &bucket{
@@ -190,5 +194,6 @@ func (s *stats) UnmarshalJSON(b []byte) error {
 			End:   bs.End.In(timeZone),
 		}
 	}
+
 	return nil
 }
