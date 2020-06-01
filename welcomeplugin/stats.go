@@ -8,6 +8,16 @@ import (
 	"time"
 )
 
+var timeZone *time.Location = loadLocation("America/Vancouver") // where this bot work
+
+func loadLocation(loc string) *time.Location {
+	timeZone, err := time.LoadLocation(loc)
+	if err != nil {
+		panic(err)
+	}
+	return timeZone
+}
+
 const durationDay = 24 * time.Hour
 
 type bucket struct {
@@ -58,7 +68,7 @@ func (s *stats) increment(t time.Time) {
 
 func (s *stats) curBucket() *bucket {
 	if s.buckets == nil || s.buckets.Value == nil { // first time
-		b := newBucket(time.Now())
+		b := newBucket(time.Now().In(timeZone))
 		s.buckets.Value = b
 		return b
 	}
@@ -95,7 +105,7 @@ func (s *stats) week() int {
 	if s.buckets == nil {
 		return 0
 	}
-	weekDate := time.Now().Add(-7 * 24 * time.Hour)
+	weekDate := time.Now().In(timeZone).Add(-7 * 24 * time.Hour)
 	count := 0
 	s.buckets.Do(func(v interface{}) {
 		if v == nil {
@@ -165,6 +175,7 @@ func (s stats) MarshalJSON() ([]byte, error) {
 	})
 	return json.Marshal(statsSpec)
 }
+
 func (s *stats) UnmarshalJSON(b []byte) error {
 	var spec statsSpec
 	if err := json.Unmarshal(b, &spec); err != nil {
@@ -176,7 +187,7 @@ func (s *stats) UnmarshalJSON(b []byte) error {
 		s.buckets = s.buckets.Next()
 		s.buckets.Value = &bucket{
 			Count: bs.Count,
-			End:   bs.End,
+			End:   bs.End.In(timeZone),
 		}
 	}
 	return nil
