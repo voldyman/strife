@@ -135,7 +135,8 @@ func (s *stats) String() string {
 	}
 	var out strings.Builder
 	bucketCount := 0
-	s.buckets.Do(func(v interface{}) {
+	iter := s.buckets.Next()
+	iter.Do(func(v interface{}) {
 		defer func() { bucketCount++ }()
 		if v == nil {
 			out.WriteString(fmt.Sprintf("%d: %s   -\n", bucketCount, "<nil>"))
