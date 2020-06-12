@@ -143,7 +143,7 @@ func (s *stats) String() string {
 
 		}
 		b := v.(*bucket)
-		out.WriteString(fmt.Sprintf("%d: %5d %s\n", bucketCount, b.Count, b.End.Format(time.RFC822)))
+		out.WriteString(fmt.Sprintf("%d: %5d %s\n", bucketCount, b.Count, b.End.Format(time.RFC1123)))
 	})
 
 	return out.String()
