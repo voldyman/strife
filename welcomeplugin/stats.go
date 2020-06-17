@@ -142,8 +142,9 @@ func (s *stats) String() string {
 			out.WriteString(fmt.Sprintf("%d: %s   -\n", bucketCount, "<nil>"))
 
 		}
-		b := v.(*bucket)
-		out.WriteString(fmt.Sprintf("%d: %5d %s\n", bucketCount, b.Count, b.End.Format(time.RFC1123)))
+		if b, ok := v.(*bucket); ok {
+			out.WriteString(fmt.Sprintf("%d: %5d %s\n", bucketCount, b.Count, b.End.Format(time.RFC1123)))
+		}
 	})
 
 	return out.String()
