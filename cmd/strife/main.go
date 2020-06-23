@@ -33,7 +33,7 @@ var imgurID string
 var imgurAlbum string
 var mashableKey string
 var adminMapping = map[string][]string{
-	"449378915203678230": []string{"Bot man", "I hear voices", "Music"}, // "bot man", "i hear voices" and "music"
+	"707620933841453186": {"Bot man", "I hear voices", "Music"}, // "bot man", "i hear voices" and "music"
 }
 
 func init() {
