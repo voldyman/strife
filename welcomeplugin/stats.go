@@ -60,7 +60,7 @@ func (s *stats) increment(t time.Time) {
 		s.buckets = ring.New(s.Days)
 	}
 	if s.buckets.Value == nil {
-		s.buckets.Value = newBucket(t)
+		s.buckets.Value = newBucket(t.In(timeZone))
 	}
 	for !s.curBucket().Add(t, 1) {
 		s.moveBucketForward()
