@@ -17,10 +17,10 @@ import (
 	"github.com/iopred/bruxism/numbertriviaplugin"
 	"github.com/iopred/bruxism/playedplugin"
 	"github.com/iopred/bruxism/playingplugin"
-	"github.com/iopred/bruxism/reminderplugin"
 	"github.com/iopred/bruxism/statsplugin"
 	"github.com/iopred/bruxism/triviaplugin"
 	"github.com/voldyman/strife/musicplugin"
+	"github.com/voldyman/strife/reminderplugin"
 	"github.com/voldyman/strife/welcomeplugin"
 )
 
