@@ -76,17 +76,11 @@ func main() {
 	}, nil)
 
 	// Register the Discord service if we have an email or token.
-	credsMissing := (discordEmail == "" && discordPassword == "")
-	if credsMissing && discordToken == "" {
-		fmt.Println("please specify discord email & password or discord token to run the bot")
+	if discordToken == "" {
+		fmt.Println("please specify discord token to run the bot")
 		os.Exit(1)
 	}
-	var discord *bruxism.Discord
-	if discordToken != "" {
-		discord = bruxism.NewDiscord(discordToken)
-	} else {
-		discord = bruxism.NewDiscord(discordEmail, discordPassword)
-	}
+	discord := bruxism.NewDiscord(discordToken)
 	discord.ApplicationClientID = discordApplicationClientID
 	discord.OwnerUserID = discordOwnerUserID
 
