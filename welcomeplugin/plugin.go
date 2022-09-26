@@ -42,12 +42,11 @@ func (w *WelcomePlugin) Load(bot *bruxism.Bot, service bruxism.Service, data []b
 		}
 	}
 
-	go w.setupJoinListener()
-
+	go w.setupListeners()
 	return nil
 }
 
-func (w *WelcomePlugin) setupJoinListener() {
+func (w *WelcomePlugin) setupListeners() {
 	w.discord.Session.State.TrackPresences = true
 	w.discord.Session.AddHandler(w.guildMemberAddHandler)
 }

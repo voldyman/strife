@@ -1,15 +1,18 @@
 package statsplugin
 
 import (
+	"bytes"
 	"container/ring"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"math"
 	"sort"
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
 	"gonum.org/v1/plot"
 	"gonum.org/v1/plot/palette/moreland"
 	"gonum.org/v1/plot/plotter"
@@ -128,11 +131,11 @@ func (s *StatsRecorder) WeekMatrix() *WeekMsgCountMatrix {
 
 		dayDiff := b.End.Day() - weekDate.Day()
 		if dayDiff < 0 {
-			log.Print("found date before the week", b.End.Day(), "and week start day is", weekDate.Day())
+			log.Printf("found date before the week '%d' and week start day is '%d'", b.End.Day(), weekDate.Day())
 			return
 		}
 		if dayDiff >= 7 {
-			log.Print("found date after 7 days:", b.End.Day(), "and week end day should be", weekDate.Add(7*24*time.Hour).Day())
+			log.Printf("found date after 7 days: %d' and week end day should be: '%d'", b.End.Day(), weekDate.Add(7*24*time.Hour).Day())
 			return
 		}
 		result.matrix[dayDiff] = b.Hourly
@@ -224,6 +227,7 @@ func (s *StatsRecorder) UnmarshalJSON(b []byte) error {
 	}
 	s.Days = spec.Days
 	s.dayBuckets = ring.New(s.Days)
+	s.clock = localClock(timeZone)
 
 	sort.Slice(spec.Buckets, func(i, j int) bool { return spec.Buckets[i].End.Before(spec.Buckets[j].End) })
 
@@ -281,7 +285,7 @@ func (m *WeekMsgCountMatrix) Z(c, r int) float64 {
 	return float64(m.matrix[c][r])
 }
 
-func (m *WeekMsgCountMatrix) Plot() {
+func (m *WeekMsgCountMatrix) Plot() (io.Reader, error) {
 	total := 7 * 24
 	max := -1
 	for _, day := range m.matrix {
@@ -318,7 +322,11 @@ func (m *WeekMsgCountMatrix) Plot() {
 
 		hours[i] = fmt.Sprintf("%d%s", hr, suffix)
 	}
-	colorpalette := moreland.SmoothBlueRed().Palette(total * max)
+	paletteSize := total * max
+	if paletteSize == 0 {
+		paletteSize = 100
+	}
+	colorpalette := moreland.SmoothBlueRed().Palette(paletteSize)
 	hm := plotter.NewHeatMap(m, colorpalette)
 	pt := plot.New()
 	pt.Title.Text = "Weekly Activity"
@@ -327,9 +335,16 @@ func (m *WeekMsgCountMatrix) Plot() {
 	pt.X.Tick.Marker = ticks(days)
 	pt.Y.Tick.Marker = ticks(hours)
 	pt.Add(hm)
-	if err := pt.Save(5*vg.Inch, 5*vg.Inch, "img.png"); err != nil {
-		panic(err)
+	wt, err := pt.WriterTo(5*vg.Inch, 5*vg.Inch, "png")
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to create plot writer")
 	}
+	buf := bytes.Buffer{}
+	_, err = wt.WriteTo(&buf)
+	if err != nil {
+		return nil, errors.Wrapf(err, "unable to writer plot to buffer")
+	}
+	return &buf, nil
 }
 
 // internal data structure for heatmap ticks

@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/iopred/bruxism"
@@ -21,6 +22,7 @@ import (
 	"github.com/iopred/bruxism/triviaplugin"
 	"github.com/voldyman/strife/musicplugin"
 	"github.com/voldyman/strife/reminderplugin"
+	msgstatsplugin "github.com/voldyman/strife/statsplugin"
 	"github.com/voldyman/strife/welcomeplugin"
 )
 
@@ -34,6 +36,9 @@ var imgurAlbum string
 var mashableKey string
 var adminMapping = map[string][]string{
 	"707620933841453186": {"Bot man", "I hear voices", "Music"}, // "bot man", "i hear voices" and "music"
+}
+var statsAllowedMapping = map[string][]string{
+	"707620933841453186": {"Moderator", "Server Administration Engineer"},
 }
 
 func init() {
@@ -96,12 +101,13 @@ func main() {
 	bot.RegisterPlugin(discord, reminderplugin.New())
 	bot.RegisterPlugin(discord, triviaplugin.New())
 	bot.RegisterPlugin(discord, welcomeplugin.New(discord, discordOwnerUserID))
+	bot.RegisterPlugin(discord, msgstatsplugin.New(discord, statsAllowedMapping))
 
 	bot.Open()
 
 	// Wait for a termination signal, while saving the bot state every minute. Save on close.
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, os.Kill)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
 	t := time.Tick(1 * time.Minute)
 
