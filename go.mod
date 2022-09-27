@@ -10,6 +10,7 @@ require (
 	github.com/iopred/bruxism v0.0.0-20220131032608-a6739bc46ec3
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.7.0
+	github.com/tj/go-naturaldate v1.3.0
 	gonum.org/v1/plot v0.10.0
 )
 

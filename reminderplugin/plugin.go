@@ -11,8 +11,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bwmarrin/discordgo"
 	"github.com/dustin/go-humanize"
 	"github.com/iopred/bruxism"
+	"github.com/tj/go-naturaldate"
 )
 
 // A Reminder holds data about a specific reminder.
@@ -29,6 +31,7 @@ type Reminder struct {
 type ReminderPlugin struct {
 	sync.RWMutex
 	bot            *bruxism.Bot
+	discord        *bruxism.Discord
 	Reminders      []*Reminder
 	TotalReminders int
 }
@@ -320,8 +323,96 @@ func (p *ReminderPlugin) Load(bot *bruxism.Bot, service bruxism.Service, data []
 		p.TotalReminders = len(p.Reminders)
 	}
 
+	for _, s := range p.discord.Sessions {
+		for _, guild := range s.State.Guilds {
+			cmd, err := p.discord.Session.ApplicationCommandCreate(p.discord.Session.State.User.ID, guild.ID, createReminderCMD())
+			if err != nil {
+				log.Print("unable to create command:", err)
+				continue
+			}
+			log.Print("created remindme command:", cmd.ApplicationID, "for guild:", guild.Name)
+		}
+		p.discord.Session.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			if i.ApplicationCommandData().Name == "remindme" {
+				p.handleCreateReminderCMD(s, i)
+			}
+		})
+	}
 	go p.Run(bot, service)
 	return nil
+}
+
+func createReminderCMD() *discordgo.ApplicationCommand {
+	return &discordgo.ApplicationCommand{
+		ID:          "remdind-me-nalak",
+		Name:        "remindme",
+		Description: "create a reminder",
+		Options: []*discordgo.ApplicationCommandOption{
+			{Name: "when", Required: true, Type: discordgo.ApplicationCommandOptionString, Description: "2 days, 1 hour, etc."},
+			{Name: "what", Required: true, Type: discordgo.ApplicationCommandOptionString, Description: "What is the reminder message?"},
+		},
+	}
+}
+func (p *ReminderPlugin) handleCreateReminderCMD(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	what := ""
+	when := ""
+	for _, opt := range i.ApplicationCommandData().Options {
+		if opt.Name == "when" {
+			when = opt.StringValue()
+		}
+		if opt.Name == "what" {
+			what = opt.StringValue()
+		}
+	}
+	trigger, err := naturaldate.Parse(when, time.Now(), naturaldate.WithDirection(naturaldate.Future))
+	if err != nil {
+		p.sendInteractionResponse(s, i, fmt.Sprintf("unable to parse time: '%s'", when))
+		return
+	}
+	now := time.Now()
+	if trigger.Before(now) || trigger.After(now.Add(time.Hour*24*365+time.Hour)) {
+		fmt.Println("Invalid time", humanize.Time(trigger))
+		p.sendInteractionResponse(s, i, fmt.Sprintf("Invalid time. eg: %s", strings.Join(randomTimes, ", ")))
+		return
+	}
+
+	err = p.AddReminder(&Reminder{
+		StartTime: now,
+		Time:      trigger,
+		Requester: userID(i),
+		Target:    i.ChannelID,
+		Message:   what,
+		IsPrivate: false,
+	})
+	if err != nil {
+		p.sendInteractionResponse(s, i, fmt.Sprintf("error adding reminder: %s", err.Error()))
+		return
+	}
+	p.sendInteractionResponse(s, i, fmt.Sprintf("Added reminder for %s", humanize.Time(trigger)))
+}
+func userID(i *discordgo.InteractionCreate) string {
+	userID := ""
+	if i.User != nil {
+		userID = i.User.ID
+	}
+	if i.Member != nil {
+		userID = i.Member.User.ID
+	}
+	return userID
+}
+
+func (p *ReminderPlugin) sendInteractionResponse(s *discordgo.Session, i *discordgo.InteractionCreate, msg string) {
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: msg,
+		},
+	})
+	if err != nil {
+		log.Print("unable to respond")
+	} else {
+		log.Print("successfully responded to command")
+	}
 }
 
 // Save will save plugin state to a byte array.
@@ -340,8 +431,9 @@ func (p *ReminderPlugin) Name() string {
 }
 
 // New will create a new Reminder plugin.
-func New() bruxism.Plugin {
+func New(discord *bruxism.Discord) bruxism.Plugin {
 	return &ReminderPlugin{
 		Reminders: []*Reminder{},
+		discord:   discord,
 	}
 }

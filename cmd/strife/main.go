@@ -98,7 +98,7 @@ func main() {
 	bot.RegisterPlugin(discord, mysonplugin.New())
 	bot.RegisterPlugin(discord, playedplugin.New())
 	bot.RegisterPlugin(discord, playingplugin.New())
-	bot.RegisterPlugin(discord, reminderplugin.New())
+	bot.RegisterPlugin(discord, reminderplugin.New(discord))
 	bot.RegisterPlugin(discord, triviaplugin.New())
 	bot.RegisterPlugin(discord, welcomeplugin.New(discord, discordOwnerUserID))
 	bot.RegisterPlugin(discord, msgstatsplugin.New(discord, statsAllowedMapping))
