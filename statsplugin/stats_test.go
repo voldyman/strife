@@ -2,8 +2,6 @@ package statsplugin
 
 import (
 	"encoding/json"
-	"io/fs"
-	"io/ioutil"
 	"testing"
 	"time"
 
@@ -152,9 +150,9 @@ func TestHourlyCounters(t *testing.T) {
 	assert.Equal(t, 106, sumDay(weekMatrix[4]), "day 4 does not match expected total")
 	assert.Equal(t, 119, sumDay(weekMatrix[5]), "day 5 does not match expected total")
 	assert.Equal(t, 114, sumDay(weekMatrix[6]), "day 6 does not match expected total")
-	w, _ := matrixResult.Plot()
-	data, _ := ioutil.ReadAll(w)
-	ioutil.WriteFile("image.png", data, fs.ModePerm)
+	// w, _ := matrixResult.Plot()
+	// data, _ := io.ReadAll(w)
+	// os.WriteFile("image.png", data, fs.ModePerm)
 }
 
 func sumDay(counts [24]int) int {
@@ -171,8 +169,7 @@ func TestUnmarshingStats(t *testing.T) {
 	statsPlugin := &StatsPlugin{}
 	err := json.Unmarshal([]byte(storedJSON), statsPlugin)
 	assert.Nil(t, err)
-	w, _ := statsPlugin.MessageStats["680975393188347993"].WeekMatrix().Plot()
-	data, _ := ioutil.ReadAll(w)
-	ioutil.WriteFile("image.png", data, fs.ModePerm)
-	t.Fail()
+	// w, _ := statsPlugin.MessageStats["680975393188347993"].WeekMatrix().Plot()
+	// data, _ := ioutil.ReadAll(w)
+	// os.WriteFile("image.png", data, fs.ModePerm)
 }
