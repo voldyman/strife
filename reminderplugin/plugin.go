@@ -379,7 +379,7 @@ func (p *ReminderPlugin) handleCreateReminderCMD(s *discordgo.Session, i *discor
 	err = p.AddReminder(&Reminder{
 		StartTime: now,
 		Time:      trigger,
-		Requester: userID(i),
+		Requester: fmt.Sprintf("<@%s>", userID(i)),
 		Target:    i.ChannelID,
 		Message:   what,
 		IsPrivate: false,
