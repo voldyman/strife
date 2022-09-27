@@ -129,19 +129,14 @@ func (s *StatsRecorder) WeekMatrix() *WeekMsgCountMatrix {
 			return
 		}
 
-		dayDiff := b.End.Day() - weekDate.Day()
-		log.Printf("found bucket for day %d ", dayDiff)
-		if dayDiff < 0 {
-			log.Printf("found date before the week '%d' and week start day is '%d'", b.End.Day(), weekDate.Day())
+		dayDiff := b.End.Day() - weekDate.Day() - 1
+		if dayDiff < 0 || dayDiff >= 7 {
+			log.Printf("date diff %d < 0", dayDiff)
 			return
 		}
-		if dayDiff > 7 {
-			log.Printf("found date after 7 days: '%d' and week end day should be: '%d'", b.End.Day(), weekDate.Add(7*24*time.Hour).Day())
-			return
-		}
+
 		result.matrix[dayDiff] = b.Hourly
 	})
-
 	return result
 }
 
@@ -235,8 +230,9 @@ func (s *StatsRecorder) UnmarshalJSON(b []byte) error {
 	for _, bs := range spec.Buckets {
 		s.dayBuckets = s.dayBuckets.Next()
 		s.dayBuckets.Value = &dayBucket{
-			Count: bs.Count,
-			End:   bs.End.In(timeZone),
+			Count:  bs.Count,
+			End:    bs.End.In(timeZone),
+			Hourly: bs.Hourly,
 		}
 	}
 

@@ -2,6 +2,8 @@ package statsplugin
 
 import (
 	"encoding/json"
+	"io/fs"
+	"io/ioutil"
 	"testing"
 	"time"
 
@@ -147,7 +149,9 @@ func TestHourlyCounters(t *testing.T) {
 	assert.Equal(t, sumDay(weekMatrix[4]), 106, "day 4 does not match expected total")
 	assert.Equal(t, sumDay(weekMatrix[5]), 119, "day 5 does not match expected total")
 	assert.Equal(t, sumDay(weekMatrix[6]), 114, "day 6 does not match expected total")
-	// matrixResult.Plot()
+	w, _ := matrixResult.Plot()
+	data, _ := ioutil.ReadAll(w)
+	ioutil.WriteFile("image.png", data, fs.ModePerm)
 }
 
 func sumDay(counts [24]int) int {
@@ -156,4 +160,16 @@ func sumDay(counts [24]int) int {
 		total += c
 	}
 	return total
+}
+
+func TestUnmarshingStats(t *testing.T) {
+	storedJSON := `{"MessageStats":{"680975393188347993":{"Days":10,"Buckets":[{"Count":1068,"Hourly":[0,2,0,0,4,5,0,0,9,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0],"End":"2022-09-26T23:21:22.220437159-07:00"}]},"707620933841453186":{"Days":10,"Buckets":[{"Count":2,"Hourly":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0],"End":"2022-09-26T23:57:26.599272-07:00"}]},"816206276862148618":{"Days":10,"Buckets":[{"Count":26,"Hourly":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"End":"2022-09-26T23:26:04.726608499-07:00"}]}}}`
+
+	statsPlugin := &StatsPlugin{}
+	err := json.Unmarshal([]byte(storedJSON), statsPlugin)
+	assert.Nil(t, err)
+	w, _ := statsPlugin.MessageStats["680975393188347993"].WeekMatrix().Plot()
+	data, _ := ioutil.ReadAll(w)
+	ioutil.WriteFile("image.png", data, fs.ModePerm)
+	t.Fail()
 }
