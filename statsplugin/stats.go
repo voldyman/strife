@@ -14,7 +14,7 @@ import (
 
 	"github.com/pkg/errors"
 	"gonum.org/v1/plot"
-	"gonum.org/v1/plot/palette/moreland"
+	"gonum.org/v1/plot/palette/brewer"
 	"gonum.org/v1/plot/plotter"
 	"gonum.org/v1/plot/vg"
 )
@@ -323,7 +323,10 @@ func (m *WeekMsgCountMatrix) Plot() (io.Reader, error) {
 	if paletteSize == 0 {
 		paletteSize = 100
 	}
-	colorpalette := moreland.SmoothBlueRed().Palette(paletteSize)
+	colorpalette, err := brewer.GetPalette(brewer.TypeSequential, "YlGnBu", 9)
+	if err != nil {
+		panic(err)
+	}
 	hm := plotter.NewHeatMap(m, colorpalette)
 	pt := plot.New()
 	pt.Title.Text = "Weekly Activity"

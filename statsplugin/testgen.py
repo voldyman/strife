@@ -23,7 +23,7 @@ def gencode(days):
     print()
     for i in range(len(totals)):
         print(
-            f'assert.Equal(t, sumDay(weekMatrix[{i}]), {totals[i]}, "day {i} does not match expected total")')
+            f'assert.Equal(t, {totals[i]}, sumDay(weekMatrix[{i}]), "day {i} does not match expected total")')
 
 
 if __name__ == '__main__':

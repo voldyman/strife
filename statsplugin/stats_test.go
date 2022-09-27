@@ -111,7 +111,7 @@ func TestHourlyCounters(t *testing.T) {
 	testDays := len(distribution)
 	s := NewStatsRecorder(testClock, testDays)
 	// start today - len(tests) days ago
-	start := testClock.Now().In(timeZone).Add(-(time.Duration(testDays) * 24 * time.Hour))
+	start := testClock.Now().In(timeZone).Add(-(time.Duration(testDays-1) * 24 * time.Hour))
 	// align start time to 0th hour of the test start day
 	start = start.Add(-time.Duration(start.Hour()) * time.Hour)
 	for day, hourlyCounts := range distribution {
@@ -142,13 +142,16 @@ func TestHourlyCounters(t *testing.T) {
 	}
 	assert.Equal(t, totalCount, matrixCount)
 
-	assert.Equal(t, sumDay(weekMatrix[0]), 102, "day 0 does not match expected total")
-	assert.Equal(t, sumDay(weekMatrix[1]), 109, "day 1 does not match expected total")
-	assert.Equal(t, sumDay(weekMatrix[2]), 113, "day 2 does not match expected total")
-	assert.Equal(t, sumDay(weekMatrix[3]), 105, "day 3 does not match expected total")
-	assert.Equal(t, sumDay(weekMatrix[4]), 106, "day 4 does not match expected total")
-	assert.Equal(t, sumDay(weekMatrix[5]), 119, "day 5 does not match expected total")
-	assert.Equal(t, sumDay(weekMatrix[6]), 114, "day 6 does not match expected total")
+	for i := range distribution {
+		assert.Equal(t, distribution[i], weekMatrix[i][:], "expected day", i, "to match matrix")
+	}
+	assert.Equal(t, 102, sumDay(weekMatrix[0]), "day 0 does not match expected total")
+	assert.Equal(t, 109, sumDay(weekMatrix[1]), "day 1 does not match expected total")
+	assert.Equal(t, 113, sumDay(weekMatrix[2]), "day 2 does not match expected total")
+	assert.Equal(t, 105, sumDay(weekMatrix[3]), "day 3 does not match expected total")
+	assert.Equal(t, 106, sumDay(weekMatrix[4]), "day 4 does not match expected total")
+	assert.Equal(t, 119, sumDay(weekMatrix[5]), "day 5 does not match expected total")
+	assert.Equal(t, 114, sumDay(weekMatrix[6]), "day 6 does not match expected total")
 	w, _ := matrixResult.Plot()
 	data, _ := ioutil.ReadAll(w)
 	ioutil.WriteFile("image.png", data, fs.ModePerm)
