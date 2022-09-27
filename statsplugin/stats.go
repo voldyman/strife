@@ -130,12 +130,13 @@ func (s *StatsRecorder) WeekMatrix() *WeekMsgCountMatrix {
 		}
 
 		dayDiff := b.End.Day() - weekDate.Day()
+		log.Printf("found bucket for day %d ", dayDiff)
 		if dayDiff < 0 {
 			log.Printf("found date before the week '%d' and week start day is '%d'", b.End.Day(), weekDate.Day())
 			return
 		}
-		if dayDiff >= 7 {
-			log.Printf("found date after 7 days: %d' and week end day should be: '%d'", b.End.Day(), weekDate.Add(7*24*time.Hour).Day())
+		if dayDiff > 7 {
+			log.Printf("found date after 7 days: '%d' and week end day should be: '%d'", b.End.Day(), weekDate.Add(7*24*time.Hour).Day())
 			return
 		}
 		result.matrix[dayDiff] = b.Hourly
