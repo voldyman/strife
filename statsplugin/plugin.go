@@ -98,7 +98,7 @@ func (w *StatsPlugin) handleStatsCommand(s *discordgo.Session, i *discordgo.Inte
 			guildName = g.Name
 		}
 
-		log.Printf("unauthorized user: '%s' requested stats on guild: '%s'", i.User.Username, guildName)
+		log.Printf("unauthorized user: '%s' requested stats on guild: '%s'", userID, guildName)
 	}
 
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
