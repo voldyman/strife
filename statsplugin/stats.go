@@ -61,7 +61,6 @@ func NewStatsRecorder(clock Clock, days int) *StatsRecorder {
 }
 
 func (s *StatsRecorder) Increment(t time.Time) {
-	t = t.In(timeZone)
 	if s.dayBuckets == nil {
 		s.dayBuckets = ring.New(s.Days)
 	}
@@ -152,7 +151,7 @@ func (s *StatsRecorder) curBucket() *dayBucket {
 
 func (s *StatsRecorder) moveBucketForward() *dayBucket {
 	curRing := s.curBucket()
-	newBucket := newBucket(curRing.End.Add(1 * time.Hour))
+	newBucket := newBucket(curRing.End.Add(6 * time.Hour))
 
 	nextRing := s.dayBuckets.Next()
 	nextRing.Value = newBucket

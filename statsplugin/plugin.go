@@ -4,23 +4,31 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
+	"sync"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/iopred/bruxism"
+	"github.com/voldyman/bitstats"
 )
 
 type StatsPlugin struct {
+	sync.Mutex
 	discord      *bruxism.Discord
+	clock        Clock
 	MessageStats map[string]*StatsRecorder
+	GuildStats   map[string]*bitstats.Stats
 	allowedRoles map[string][]string
 }
 
 func New(d *bruxism.Discord, allowedRoles map[string][]string) bruxism.Plugin {
 	return &StatsPlugin{
 		discord:      d,
+		clock:        localClock(timeZone),
 		MessageStats: map[string]*StatsRecorder{},
 		allowedRoles: allowedRoles,
+		GuildStats:   map[string]*bitstats.Stats{},
 	}
 }
 
@@ -193,8 +201,10 @@ func (w *StatsPlugin) Help(bot *bruxism.Bot, service bruxism.Service, message br
 }
 
 func (w *StatsPlugin) Message(bot *bruxism.Bot, service bruxism.Service, message bruxism.Message) {
+	guildID := w.guildID(message)
+	w.recordMessage(guildID, message.Channel(), message.UserID(), message.Type())
 	if message.Type() == bruxism.MessageTypeCreate {
-		w.guildStats(w.guildID(message)).Increment(time.Now())
+		w.guildStats(guildID).Increment(time.Now())
 	}
 }
 
@@ -205,6 +215,33 @@ func (w *StatsPlugin) guildID(msg bruxism.Message) string {
 		return ""
 	}
 	return ch.GuildID
+}
+
+func (w *StatsPlugin) recordMessage(guildID, channelID, userID string, typ bruxism.MessageType) {
+	usrID, err := strconv.ParseUint(userID, 10, 64)
+	if err != nil {
+		log.Printf("unable to convert user id to uint64 \"%s\": %+v", userID, err)
+		return
+	}
+	w.Lock()
+	defer w.Unlock()
+	stats, ok := w.GuildStats[guildID]
+	if !ok {
+		stats = bitstats.New()
+		w.GuildStats[guildID] = stats
+	}
+	now := w.clock.Now()
+	day := now.Format("2006-01-02")
+	hour := now.Format("15")
+	stats.Add(day, string(typ)+":"+hour, usrID)
+
+	// clean up extra days
+	for stats.PartitionsCount() >= 10 {
+		name, ok := stats.RemoveMinPartition()
+		if ok {
+			log.Println("Removed stats for day ", name)
+		}
+	}
 }
 
 func (w *StatsPlugin) guildStats(guildID string) *StatsRecorder {
