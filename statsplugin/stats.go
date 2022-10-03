@@ -128,7 +128,7 @@ func (s *StatsRecorder) WeekMatrix() *WeekMsgCountMatrix {
 			return
 		}
 
-		dayDiff := b.End.Day() - weekDate.Day() - 1
+		dayDiff := int(b.End.Sub(weekDate).Hours() / 24)
 		if dayDiff < 0 || dayDiff >= 7 {
 			log.Printf("date diff %d < 0", dayDiff)
 			return
@@ -282,46 +282,13 @@ func (m *WeekMsgCountMatrix) Z(c, r int) float64 {
 }
 
 func (m *WeekMsgCountMatrix) Plot() (io.Reader, error) {
-	total := 7 * 24
-	max := -1
-	for _, day := range m.matrix {
-		for _, hr := range day {
-			if max < hr {
-				max = hr
-			}
-		}
-	}
-
 	days := make([]string, 7)
 	timeIter := m.startDate
 	for i := range days {
 		days[i] = timeIter.Format("2-Jan")
 		timeIter = timeIter.Add(24 * time.Hour)
 	}
-	hours := make([]string, 24)
-	for i := range hours {
-		hr := i + 1
-		suffix := "am"
 
-		switch hr {
-		case 12:
-			suffix = "pm"
-		case 24:
-			hr = 12
-			suffix = "am"
-		default:
-			if hr > 12 {
-				hr = hr - 12
-				suffix = "pm"
-			}
-		}
-
-		hours[i] = fmt.Sprintf("%d%s", hr, suffix)
-	}
-	paletteSize := total * max
-	if paletteSize == 0 {
-		paletteSize = 100
-	}
 	colorpalette, err := brewer.GetPalette(brewer.TypeSequential, "YlGnBu", 9)
 	if err != nil {
 		panic(err)
@@ -332,9 +299,9 @@ func (m *WeekMsgCountMatrix) Plot() (io.Reader, error) {
 	// pt.X.Label.Text = "Days"
 	// pt.Y.Label.Text = "Hours"
 	pt.X.Tick.Marker = ticks(days)
-	pt.Y.Tick.Marker = ticks(hours)
+	pt.Y.Tick.Marker = ticks(genHours())
 	pt.Add(hm)
-	wt, err := pt.WriterTo(5*vg.Inch, 5*vg.Inch, "png")
+	wt, err := pt.WriterTo(7*vg.Inch, 7*vg.Inch, "png")
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create plot writer")
 	}
@@ -344,6 +311,25 @@ func (m *WeekMsgCountMatrix) Plot() (io.Reader, error) {
 		return nil, errors.Wrapf(err, "unable to writer plot to buffer")
 	}
 	return &buf, nil
+}
+
+func genHours() []string {
+	hours := make([]string, 24)
+	for i := range hours {
+		hr := i
+
+		meridien := "pm"
+		if hr < 12 {
+			meridien = "am"
+		}
+		hr = hr % 12
+		if hr == 0 {
+			hr = 12
+		}
+
+		hours[i] = fmt.Sprintf("%d%s", hr, meridien)
+	}
+	return hours
 }
 
 // internal data structure for heatmap ticks

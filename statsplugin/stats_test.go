@@ -109,7 +109,7 @@ func TestHourlyCounters(t *testing.T) {
 	testDays := len(distribution)
 	s := NewStatsRecorder(testClock, testDays)
 	// start today - len(tests) days ago
-	start := testClock.Now().In(timeZone).Add(-(time.Duration(testDays-1) * 24 * time.Hour))
+	start := testClock.Now().Add(-(time.Duration(testDays-1) * 24 * time.Hour))
 	// align start time to 0th hour of the test start day
 	start = start.Add(-time.Duration(start.Hour()) * time.Hour)
 	for day, hourlyCounts := range distribution {

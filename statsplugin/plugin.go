@@ -294,3 +294,26 @@ func filterRoles(guildRoles map[string]*discordgo.Role, adminRoles []string, gui
 
 	return allowedRoles
 }
+
+func statsToMatrix(stats *bitstats.Stats, eventPrefix string) [][]int {
+	result := [][]int{}
+	for _, part := range stats.Partitions() {
+		events, ok := stats.EventsByPrefix(part, eventPrefix)
+		if !ok {
+			break
+		}
+		hourly := []int{}
+		for _, event := range events {
+			vals, ok := stats.ValuesSet(part, event)
+			if !ok {
+				log.Printf("Values Set not found for partition %s, event %s", part, event)
+				continue
+			}
+			log.Printf("Processing event: %s/%s", part, event)
+			hourly = append(hourly, int(vals.GetCardinality()))
+		}
+		log.Printf("added hourly: %+v", hourly)
+		result = append(result, hourly)
+	}
+	return result
+}
