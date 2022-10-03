@@ -110,7 +110,7 @@ func (s *StatsRecorder) Week() int {
 	return count
 }
 func (s *StatsRecorder) WeekMatrix() *WeekMsgCountMatrix {
-	weekDate := s.clock.Now().Add(-7 * 24 * time.Hour)
+	weekDate := s.clock.Now().Add(-6 * 24 * time.Hour)
 	result := &WeekMsgCountMatrix{
 		matrix:    [7][24]int{},
 		startDate: weekDate,
@@ -130,7 +130,7 @@ func (s *StatsRecorder) WeekMatrix() *WeekMsgCountMatrix {
 
 		dayDiff := int(b.End.Sub(weekDate).Hours() / 24)
 		if dayDiff < 0 || dayDiff >= 7 {
-			log.Printf("date diff %d < 0", dayDiff)
+			log.Printf("date diff %d is not in range [0, 6]: %s", dayDiff, b.End.Format("2-Jan"))
 			return
 		}
 

@@ -6,7 +6,6 @@ import (
 	"log"
 	"strconv"
 	"sync"
-	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/iopred/bruxism"
@@ -204,7 +203,7 @@ func (w *StatsPlugin) Message(bot *bruxism.Bot, service bruxism.Service, message
 	guildID := w.guildID(message)
 	w.recordMessage(guildID, message.Channel(), message.UserID(), message.Type())
 	if message.Type() == bruxism.MessageTypeCreate {
-		w.guildStats(guildID).Increment(time.Now())
+		w.guildStats(guildID).Increment(w.clock.Now())
 	}
 }
 
