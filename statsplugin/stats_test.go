@@ -2,9 +2,11 @@ package statsplugin
 
 import (
 	"encoding/json"
+	"os"
 	"testing"
 	"time"
 
+	"github.com/RoaringBitmap/roaring/roaring64"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -172,4 +174,24 @@ func TestUnmarshingStats(t *testing.T) {
 	// w, _ := statsPlugin.MessageStats["680975393188347993"].WeekMatrix().Plot()
 	// data, _ := ioutil.ReadAll(w)
 	// os.WriteFile("image.png", data, fs.ModePerm)
+}
+
+func TestStatsToMatrix(t *testing.T) {
+	t.Skipped()
+	plugin := New(nil, map[string][]string{}).(*StatsPlugin)
+	data, err := os.ReadFile("/Users/voldyman/dev/strife/cmd/strife/Discord/stats")
+	if !assert.Nil(t, err) {
+		return
+	}
+
+	err = json.Unmarshal(data, plugin)
+	if !assert.Nil(t, err) {
+		return
+	}
+	matrix, err := plugin.statsToMatrix("707620933841453186", "create", func(vals *roaring64.Bitmap) int {
+		return int(vals.GetCardinality())
+	})
+	assert.Nil(t, err)
+	t.Logf("Matrix: %+v", matrix)
+	t.Fail()
 }

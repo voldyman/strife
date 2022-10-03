@@ -3,10 +3,11 @@ package statsplugin
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
-	"strconv"
 	"sync"
 
+	"github.com/RoaringBitmap/roaring/roaring64"
 	"github.com/bwmarrin/discordgo"
 	"github.com/iopred/bruxism"
 	"github.com/voldyman/bitstats"
@@ -20,6 +21,8 @@ type StatsPlugin struct {
 	GuildStats   map[string]*bitstats.Stats
 	allowedRoles map[string][]string
 }
+
+const statsAppCommandName = "stats"
 
 func New(d *bruxism.Discord, allowedRoles map[string][]string) bruxism.Plugin {
 	return &StatsPlugin{
@@ -65,7 +68,7 @@ func (w *StatsPlugin) setupListeners() {
 			log.Print("created stats command:", cmd.ApplicationID, "for guild:", guild.Name)
 		}
 		w.discord.Session.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			if i.ApplicationCommandData().Name == "stats" {
+			if i.ApplicationCommandData().Name == statsAppCommandName {
 				w.handleStatsCommand(s, i)
 			}
 		})
@@ -75,8 +78,22 @@ func (w *StatsPlugin) setupListeners() {
 func messageStatsCMD() *discordgo.ApplicationCommand {
 	return &discordgo.ApplicationCommand{
 		ID:          applicationID,
-		Name:        "stats",
+		Name:        statsAppCommandName,
 		Description: "Show server stats",
+		Options: []*discordgo.ApplicationCommandOption{
+			{
+				Type:        discordgo.ApplicationCommandOptionUser,
+				Name:        "user",
+				Description: "Activity matrix for user",
+				Required:    false,
+			},
+			{
+				Type:        discordgo.ApplicationCommandOptionUser,
+				Name:        "user2",
+				Description: "Combine activity with user",
+				Required:    false,
+			},
+		},
 	}
 }
 
@@ -157,7 +174,52 @@ func (w *StatsPlugin) sendStatsResponse(s *discordgo.Session, i *discordgo.Inter
 		w.respondWithError(s, i, "stats not found for guild")
 		return
 	}
-	imgReader, err := stats.WeekMatrix().Plot()
+	queryUserID := uint64(0)
+	secondQueryUserID := uint64(0)
+	for _, opt := range i.ApplicationCommandData().Options {
+		if opt.Name == "user" || opt.Name == "user2" {
+			var userID uint64
+			var err error
+			if user := opt.UserValue(s); user != nil {
+				userID, err = parseUserID(user.ID)
+			}
+			if err != nil {
+				log.Printf("unable to parse user id: %+v", err)
+			}
+			if userID != 0 {
+				if queryUserID == 0 {
+					queryUserID = userID
+				} else {
+					secondQueryUserID = userID
+				}
+			}
+		}
+
+	}
+	var imgReader io.Reader
+	var err error
+	if queryUserID != 0 {
+		matrix, err := w.statsToMatrix(i.GuildID, string(bruxism.MessageTypeCreate), func(b *roaring64.Bitmap) int {
+			if b.Contains(queryUserID) {
+				if secondQueryUserID != 0 {
+					if b.Contains(secondQueryUserID) {
+						return 1
+					}
+					return 0
+				}
+				return 1
+			}
+			return 0
+		})
+		if err != nil {
+			log.Printf("unable to plot user %s matrix: %+v", queryUserID, err)
+			w.respondWithError(s, i, "unable to render activity plot: "+err.Error())
+			return
+		}
+		imgReader, err = matrix.Plot()
+	} else {
+		imgReader, err = stats.WeekMatrix().Plot()
+	}
 	if err != nil {
 		w.respondWithError(s, i, "unable to render activity plot: "+err.Error())
 		return
@@ -216,33 +278,6 @@ func (w *StatsPlugin) guildID(msg bruxism.Message) string {
 	return ch.GuildID
 }
 
-func (w *StatsPlugin) recordMessage(guildID, channelID, userID string, typ bruxism.MessageType) {
-	usrID, err := strconv.ParseUint(userID, 10, 64)
-	if err != nil {
-		log.Printf("unable to convert user id to uint64 \"%s\": %+v", userID, err)
-		return
-	}
-	w.Lock()
-	defer w.Unlock()
-	stats, ok := w.GuildStats[guildID]
-	if !ok {
-		stats = bitstats.New()
-		w.GuildStats[guildID] = stats
-	}
-	now := w.clock.Now()
-	day := now.Format("2006-01-02")
-	hour := now.Format("15")
-	stats.Add(day, string(typ)+":"+hour, usrID)
-
-	// clean up extra days
-	for stats.PartitionsCount() >= 10 {
-		name, ok := stats.RemoveMinPartition()
-		if ok {
-			log.Println("Removed stats for day ", name)
-		}
-	}
-}
-
 func (w *StatsPlugin) guildStats(guildID string) *StatsRecorder {
 	if s, ok := w.MessageStats[guildID]; ok {
 		return s
@@ -292,27 +327,4 @@ func filterRoles(guildRoles map[string]*discordgo.Role, adminRoles []string, gui
 	}
 
 	return allowedRoles
-}
-
-func statsToMatrix(stats *bitstats.Stats, eventPrefix string) [][]int {
-	result := [][]int{}
-	for _, part := range stats.Partitions() {
-		events, ok := stats.EventsByPrefix(part, eventPrefix)
-		if !ok {
-			break
-		}
-		hourly := []int{}
-		for _, event := range events {
-			vals, ok := stats.ValuesSet(part, event)
-			if !ok {
-				log.Printf("Values Set not found for partition %s, event %s", part, event)
-				continue
-			}
-			log.Printf("Processing event: %s/%s", part, event)
-			hourly = append(hourly, int(vals.GetCardinality()))
-		}
-		log.Printf("added hourly: %+v", hourly)
-		result = append(result, hourly)
-	}
-	return result
 }
