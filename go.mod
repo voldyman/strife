@@ -69,7 +69,3 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-// replace github.com/iopred/bruxism => github.com/voldyman/bruxism v0.0.0-20220129223453-f3648cc1ddd6
-// replace github.com/iopred/bruxism => github.com/voldyman/bruxism v0.0.0-20220603144514-e6c41e6f1cff
-
-// replace github.com/voldyman/bitstats => /Users/voldyman/dev/bitstats
