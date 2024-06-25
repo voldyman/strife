@@ -141,7 +141,7 @@ func (p *ReminderPlugin) AddReminder(reminder *Reminder) error {
 	for _, r := range p.Reminders {
 		if r.Requester == reminder.Requester {
 			i++
-			if i > 5 {
+			if i > 20 {
 				return errors.New("You have too many reminders already.")
 			}
 		}
