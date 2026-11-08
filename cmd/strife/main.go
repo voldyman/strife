@@ -41,10 +41,10 @@ var statsAllowedMapping = map[string][]string{
 }
 
 func init() {
-	flag.StringVar(&discordToken, "discordtoken", "", "Discord token.")
+	flag.StringVar(&discordToken, "discordtoken", os.Getenv("DISCORD_TOKEN"), "Discord token (default: $DISCORD_TOKEN).")
 	flag.StringVar(&discordEmail, "discordemail", "", "Discord account email.")
 	flag.StringVar(&discordPassword, "discordpassword", "", "Discord account password.")
-	flag.StringVar(&discordOwnerUserID, "discordowneruserid", "", "Discord owner user id.")
+	flag.StringVar(&discordOwnerUserID, "discordowneruserid", os.Getenv("DISCORD_OWNER_USER_ID"), "Discord owner user id (default: $DISCORD_OWNER_USER_ID).")
 	flag.StringVar(&discordApplicationClientID, "discordapplicationclientid", "", "Discord application client id.")
 	flag.StringVar(&imgurID, "imgurid", "", "Imgur client id.")
 	flag.StringVar(&imgurAlbum, "imguralbum", "", "Imgur album id.")

@@ -1,0 +1,19 @@
+[Unit]
+Description=strife discord bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+# State (Discord/), ./dca and the binary live here, matching the original install.
+WorkingDirectory=%h/go/bin
+# Secrets are NOT in this repo. This file holds DISCORD_TOKEN and
+# DISCORD_OWNER_USER_ID, is created on the server, and must be mode 0600.
+EnvironmentFile=%h/.config/strife/strife.env
+Environment=PATH=%h/.local/bin:%h/go/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=%h/go/bin/strife
+Restart=on-failure
+RestartSec=10
+NoNewPrivileges=true
+
+[Install]
+WantedBy=default.target

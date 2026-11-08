@@ -2,3 +2,5 @@ cmd/strife/Discord
 cmd/strife/dca
 cmd/strife/strife
 cmd/strife/yt-dlp
+*.env
+deploy/strife.linux
