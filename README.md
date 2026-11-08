@@ -11,5 +11,5 @@ go install github.com/voldyman/strife/cmd/strife
 $GOPATH/bin/strife -discordtoken "Bot <auth token>" -discordowneruserid <owner user id>
 ```
 
-The music plugin shells out to `./youtube-dl` and `./dca` (run from the working
-directory) and `ffmpeg` (on `PATH`), so these must be available at runtime.
+The music plugin shells out to `yt-dlp` and `ffmpeg` (both on `PATH`) and `./dca` (run from the
+working directory), so these must be available at runtime.

@@ -77,18 +77,18 @@ const (
 
 type song struct {
 	AddedBy     string
-	ID          string `json:"id"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	FullTitle   string `json:"full_title"`
-	Thumbnail   string `json:"thumbnail"`
-	URL         string `json:"webpage_url"`
-	Duration    int    `json:"duration"`
+	ID          string  `json:"id"`
+	Title       string  `json:"title"`
+	Description string  `json:"description"`
+	FullTitle   string  `json:"full_title"`
+	Thumbnail   string  `json:"thumbnail"`
+	URL         string  `json:"webpage_url"`
+	Duration    float64 `json:"duration"`
 	Remaining   int
 }
 
 func (s song) DurationString() string {
-	d := time.Duration(s.Duration) * time.Second
+	d := time.Duration(s.Duration * float64(time.Second))
 	f := durafmt.Parse(d)
 	return f.String()
 }
@@ -546,15 +546,15 @@ func (p *MusicPlugin) enqueue(vc *voiceConnection, url string, service bruxism.S
 	// need to parse the url and have a way to know what we're doing
 	// 1) option to queue local files
 	// 2) option to queue saved playlists
-	// 3) option to queue URL that can be passed directly to ffmpeg without youtube-dl
-	// 4) option to queue youtube-dl playlist
-	// 5) option to queue youtube-dl song
-	// 6) option to queue youtube-dl search result
+	// 3) option to queue URL that can be passed directly to ffmpeg without yt-dlp
+	// 4) option to queue yt-dlp playlist
+	// 5) option to queue yt-dlp song
+	// 6) option to queue yt-dlp search result
 
 	// right now option 4 and 5 work, only.
 	//////////////////////////////////////////////////////////////////////////
 
-	cmd := exec.Command("./youtube-dl", "-i", "-j", url)
+	cmd := exec.Command("yt-dlp", "-i", "-j", url)
 	if vc.debug {
 		cmd.Stderr = os.Stderr
 	}
@@ -696,7 +696,7 @@ func (p *MusicPlugin) play(vc *voiceConnection, close <-chan struct{}, control <
 		return
 	}
 
-	ytdl := exec.Command("./youtube-dl", "-v", "-f", "bestaudio", "-o", "-", s.URL)
+	ytdl := exec.Command("yt-dlp", "-v", "-f", "bestaudio", "-o", "-", s.URL)
 	if vc.debug {
 		ytdl.Stderr = os.Stderr
 	}
@@ -835,7 +835,7 @@ func (p *MusicPlugin) play(vc *voiceConnection, close <-chan struct{}, control <
 
 		// this can cause a panic if vc becomes nil while waiting to send
 		// on the opus channel. TODO fix..
-		vc.playing.Remaining = (vc.playing.Duration - int(time.Since(start).Seconds()))
+		vc.playing.Remaining = int(vc.playing.Duration) - int(time.Since(start).Seconds())
 
 	}
 }
