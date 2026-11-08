@@ -176,10 +176,15 @@ func TestUnmarshingStats(t *testing.T) {
 	// os.WriteFile("image.png", data, fs.ModePerm)
 }
 
+// statsDataPath points at a real stats dump produced by a running bot.
+const statsDataPath = "../cmd/strife/Discord/stats"
+
 func TestStatsToMatrix(t *testing.T) {
-	t.Skipped()
+	if _, err := os.Stat(statsDataPath); err != nil {
+		t.Skip("stats data not available: ", err)
+	}
 	plugin := New(nil, map[string][]string{}).(*StatsPlugin)
-	data, err := os.ReadFile("/Users/voldyman/dev/strife/cmd/strife/Discord/stats")
+	data, err := os.ReadFile(statsDataPath)
 	if !assert.Nil(t, err) {
 		return
 	}

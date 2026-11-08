@@ -132,6 +132,11 @@ func (p *ReminderPlugin) parseReminder(parts []string) (time.Time, string, error
 	return time.Time{}, "", errors.New("Invalid string.")
 }
 
+func hasMention(s string) bool {
+	l := strings.ToLower(s)
+	return strings.Contains(s, "<@") || strings.Contains(l, "@everyone") || strings.Contains(l, "@here")
+}
+
 // AddReminder adds a reminder.
 func (p *ReminderPlugin) AddReminder(reminder *Reminder) error {
 	p.Lock()
@@ -178,12 +183,14 @@ func (p *ReminderPlugin) Message(bot *bruxism.Bot, service bruxism.Service, mess
 	if bruxism.MatchesCommand(service, "remindlist", message) || bruxism.MatchesCommand(service, "reminderlist", message) {
 		reminders := []string{}
 		i := 0
+		p.RLock()
 		for _, r := range p.Reminders {
 			if r.Requester == requester {
 				reminders = append(reminders, fmt.Sprintf("%d - %s: %s", i, humanize.Time(r.Time), r.Message))
 				i++
 			}
 		}
+		p.RUnlock()
 		if len(reminders) > 0 {
 			if service.SupportsMultiline() {
 				service.SendMessage(message.Channel(), fmt.Sprintf("Your reminders:\n%s", strings.Join(reminders, "\n")))
@@ -208,11 +215,11 @@ func (p *ReminderPlugin) Message(bot *bruxism.Bot, service bruxism.Service, mess
 			}
 		}
 
+		p.Lock()
 		j := 0
 		for i, r := range p.Reminders {
 			if r.Requester == requester {
 				if j == index {
-					p.Lock()
 					p.Reminders = append(p.Reminders[:i], p.Reminders[i+1:]...)
 					p.Unlock()
 					service.SendMessage(message.Channel(), "Reminder deleted.")
@@ -221,6 +228,7 @@ func (p *ReminderPlugin) Message(bot *bruxism.Bot, service bruxism.Service, mess
 				j++
 			}
 		}
+		p.Unlock()
 		return
 	}
 
@@ -250,7 +258,7 @@ func (p *ReminderPlugin) Message(bot *bruxism.Bot, service bruxism.Service, mess
 	}
 
 	if service.Name() == bruxism.DiscordServiceName {
-		if strings.Index(r, "<@") != -1 || strings.Index(strings.ToLower(r), "@everyone") != -1 || strings.Index(strings.ToLower(r), "@here") != -1 {
+		if hasMention(r) {
 			service.SendMessage(message.Channel(), "Invalid reminder, no mentions, sorry.")
 			return
 		}
@@ -276,7 +284,7 @@ func (p *ReminderPlugin) Message(bot *bruxism.Bot, service bruxism.Service, mess
 
 // SendReminder sends a reminder.
 func (p *ReminderPlugin) SendReminder(service bruxism.Service, reminder *Reminder) {
-	if strings.Index(reminder.Message, "<@") != -1 || strings.Index(strings.ToLower(reminder.Message), "@everyone") != -1 || strings.Index(strings.ToLower(reminder.Message), "@here") != -1 {
+	if hasMention(reminder.Message) {
 		return
 	}
 
@@ -344,7 +352,7 @@ func (p *ReminderPlugin) Load(bot *bruxism.Bot, service bruxism.Service, data []
 
 func createReminderCMD() *discordgo.ApplicationCommand {
 	return &discordgo.ApplicationCommand{
-		ID:          "remdind-me-nalak",
+		ID:          "remind-me",
 		Name:        "remindme",
 		Description: "create a reminder",
 		Options: []*discordgo.ApplicationCommandOption{

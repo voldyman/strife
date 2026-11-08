@@ -2,7 +2,6 @@ package statsplugin
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"sync"
@@ -40,7 +39,7 @@ func (w *StatsPlugin) Name() string {
 
 func (w *StatsPlugin) Load(bot *bruxism.Bot, service bruxism.Service, data []byte) error {
 	if service.Name() != bruxism.DiscordServiceName {
-		panic("Welcome Plugin only supports Discord.")
+		panic("Stats Plugin only supports Discord.")
 	}
 
 	if data != nil {
@@ -116,7 +115,7 @@ func (w *StatsPlugin) handleStatsCommand(s *discordgo.Session, i *discordgo.Inte
 		w.sendStatsResponse(s, i)
 		return
 	} else {
-		guildName := fmt.Sprintf(i.GuildID)
+		guildName := i.GuildID
 		g, err := s.Guild(i.GuildID)
 		if err == nil {
 			guildName = g.Name
@@ -212,7 +211,7 @@ func (w *StatsPlugin) sendStatsResponse(s *discordgo.Session, i *discordgo.Inter
 			return 0
 		})
 		if err != nil {
-			log.Printf("unable to plot user %s matrix: %+v", queryUserID, err)
+			log.Printf("unable to plot user %d matrix: %+v", queryUserID, err)
 			w.respondWithError(s, i, "unable to render activity plot: "+err.Error())
 			return
 		}

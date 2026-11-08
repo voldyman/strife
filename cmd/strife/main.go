@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"math/rand"
 	"os"
 	"os/signal"
 	"syscall"
@@ -51,8 +50,6 @@ func init() {
 	flag.StringVar(&imgurAlbum, "imguralbum", "", "Imgur album id.")
 	flag.StringVar(&mashableKey, "mashablekey", "", "Mashable key.")
 	flag.Parse()
-
-	rand.Seed(time.Now().UnixNano())
 }
 
 func main() {

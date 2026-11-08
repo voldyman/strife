@@ -71,7 +71,9 @@ func TestParsing(t *testing.T) {
 				t.Fail()
 			}
 			t.Log("Test", i, ": ", output)
-			t.Fail()
+			if strings.TrimSpace(output) == "" {
+				t.Error("no date found")
+			}
 		})
 	}
 }
