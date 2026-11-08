@@ -12,7 +12,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.12.1
 	github.com/tj/go-naturaldate v1.3.0
-	github.com/voldyman/bitstats v0.0.0-20261108010557-80c6893bc479
+	github.com/voldyman/bitstats v0.0.0-20261108012003-1f9454fb77ae
 	gonum.org/v1/plot v0.17.0
 )
 
