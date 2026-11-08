@@ -27,6 +27,21 @@ deploy/deploy.sh check      # verify server prerequisites
 `~/launch-nalak` is the old foreground launcher; it is superseded by the unit
 (it also still expects `youtube-dl`). Do not run both.
 
+## Backups
+
+`~/go/bin/Discord/` is the only irreplaceable thing on the server. It is
+protected three ways:
+
+- `deploy.sh` snapshots it **before every deploy** and aborts if that fails. A
+  deploy only ever replaces the binary and unit files; it never touches `Discord/`.
+- `strife-backup.timer` snapshots it daily (`~/backups/strife/`, newest 14 kept,
+  each archive verified).
+- `deploy.sh pull-backup` copies the newest snapshot to `deploy/backups/` here
+  (gitignored), so a copy exists off the server. Run it now and then.
+
+`deploy.sh backup` takes a snapshot on demand. To restore: stop the service,
+extract a snapshot into `~/go/bin/`, start the service.
+
 ## Secrets
 
 The unit is checked in, the token is not. The unit points at

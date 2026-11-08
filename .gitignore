@@ -4,3 +4,4 @@ cmd/strife/strife
 cmd/strife/yt-dlp
 *.env
 deploy/strife.linux
+deploy/backups/
