@@ -305,6 +305,8 @@ github.com/tj/go-naturaldate v1.3.0 h1:OgJIPkR/Jk4bFMBLbxZ8w+QUxwjqSvzd9x+yXocY4
 github.com/tj/go-naturaldate v1.3.0/go.mod h1:rpUbjivDKiS1BlfMGc2qUKNZ/yxgthOfmytQs8d8hKk=
 github.com/voldyman/bitstats v0.0.0-20261108012003-1f9454fb77ae h1:GfsI7HbUwFrLwMCj+3vkZqP/PJQx/S6Trf/K1L1LMUc=
 github.com/voldyman/bitstats v0.0.0-20261108012003-1f9454fb77ae/go.mod h1:G1+dMw6e1NzFuysG2Lq+8/FZSmnV/gUgyRa03djUu38=
+github.com/voldyman/bitstats v0.0.0-20261110155437-ecac2533866b h1:bBnYYTvcwJ36n7n3NuHKkgKcJGJVKJ5va7TL3HdlY9I=
+github.com/voldyman/bitstats v0.0.0-20261110155437-ecac2533866b/go.mod h1:yppycbJlaD9cslzeVwjTm/ZC2sN+afmQZsK7CQgPoQY=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.32/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=

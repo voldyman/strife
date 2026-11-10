@@ -9,6 +9,7 @@ import (
 	"github.com/RoaringBitmap/roaring/roaring64"
 	"github.com/bwmarrin/discordgo"
 	"github.com/iopred/bruxism"
+	"github.com/pkg/errors"
 	"github.com/voldyman/bitstats"
 )
 
@@ -43,7 +44,7 @@ func (w *StatsPlugin) Load(bot *bruxism.Bot, service bruxism.Service, data []byt
 	}
 
 	if data != nil {
-		if err := json.Unmarshal(data, w); err != nil {
+		if err := w.loadState(data); err != nil {
 			log.Println("StatsPlugin: loading data err:", err)
 		}
 	}
@@ -287,8 +288,66 @@ func (w *StatsPlugin) guildStats(guildID string) *StatsRecorder {
 	return s
 }
 
+// savedState is the persisted form of the plugin. GuildStats values are
+// bitstats binary blobs (base64 in JSON). Older versions stored each guild's
+// stats as an inline JSON object; loadState still accepts that.
+type savedState struct {
+	MessageStats map[string]*StatsRecorder
+	GuildStats   map[string]json.RawMessage
+}
+
 func (w *StatsPlugin) Save() ([]byte, error) {
-	return json.Marshal(w)
+	w.Lock()
+	defer w.Unlock()
+	state := savedState{
+		MessageStats: w.MessageStats,
+		GuildStats:   make(map[string]json.RawMessage, len(w.GuildStats)),
+	}
+	for guildID, stats := range w.GuildStats {
+		blob, err := stats.SerializeBinary()
+		if err != nil {
+			return nil, errors.Wrapf(err, "unable to serialize stats for guild %s", guildID)
+		}
+		encoded, err := json.Marshal(blob) // []byte -> base64 string
+		if err != nil {
+			return nil, err
+		}
+		state.GuildStats[guildID] = encoded
+	}
+	return json.Marshal(state)
+}
+
+func (w *StatsPlugin) loadState(data []byte) error {
+	var state savedState
+	if err := json.Unmarshal(data, &state); err != nil {
+		return err
+	}
+	guildStats := make(map[string]*bitstats.Stats, len(state.GuildStats))
+	for guildID, raw := range state.GuildStats {
+		blob := []byte(raw)
+		if len(raw) > 0 && raw[0] == '"' {
+			// current format: base64 binary blob
+			if err := json.Unmarshal(raw, &blob); err != nil {
+				log.Printf("StatsPlugin: skipping guild %s, invalid stats: %v", guildID, err)
+				continue
+			}
+		}
+		// bitstats.Load accepts both the binary and the legacy JSON format
+		stats, err := bitstats.Load(blob)
+		if err != nil {
+			log.Printf("StatsPlugin: skipping guild %s, unable to load stats: %v", guildID, err)
+			continue
+		}
+		guildStats[guildID] = stats
+	}
+
+	w.Lock()
+	defer w.Unlock()
+	if state.MessageStats != nil {
+		w.MessageStats = state.MessageStats
+	}
+	w.GuildStats = guildStats
+	return nil
 }
 
 func (w *StatsPlugin) Stats(bot *bruxism.Bot, service bruxism.Service, message bruxism.Message) []string {
